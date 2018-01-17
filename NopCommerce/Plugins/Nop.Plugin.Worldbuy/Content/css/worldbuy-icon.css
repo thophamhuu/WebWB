@@ -1,0 +1,53 @@
+﻿.worldbuy-icon-application {
+    width: 13px;
+    height: 21px;
+}
+
+    .worldbuy-icon-application:before {
+        background-image: url("../img/worldbuy/icons/worldbuy-icon-application.png");
+    }
+
+.worldbuy-icon-category {
+    width: 21px;
+    height: 16px;
+}
+
+    .worldbuy-icon-category:before {
+        background-image: url("../img/worldbuy/icons/worldbuy-icon-category.png");
+    }
+
+.worldbuy-icon-deals {
+    width: 11px;
+    height: 20px;
+}
+
+    .worldbuy-icon-deals:before {
+        background-image: url("../img/worldbuy/icons/worldbuy-icon-deals.png");
+    }
+
+.worldbuy-icon-noti {
+    width: 17px;
+    height: 18px;
+}
+
+    .worldbuy-icon-noti:before {
+        background-image: url("../img/worldbuy/icons/worldbuy-icon-noti.png");
+    }
+
+.worldbuy-icon-tag {
+    width: 14px;
+    height: 12px;
+}
+
+    .worldbuy-icon-tag:before {
+        background-image: url("../img/worldbuy/icons/worldbuy-icon-tag.png");
+    }
+
+.worldbuy-icon-televisions {
+    width: 21px;
+    height: 21px;
+}
+
+    .worldbuy-icon-televisions:before {
+        background-image: url("../img/worldbuy/icons/worldbuy-icon-televisions.png");
+    }

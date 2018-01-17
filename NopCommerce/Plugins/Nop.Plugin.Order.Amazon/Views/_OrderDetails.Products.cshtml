@@ -1,0 +1,172 @@
+﻿@model Nop.Plugin.Order.Amazon.Models.OrderModel
+@using Nop.Core.Domain.Tax;
+@using Nop.Core.Domain.Catalog;
+
+
+@if (Model.HasCart)
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderAmazon)
+                    </div>
+                    <div class="col-md-9">
+                        <table class="table table-hover table-bordered" style="max-width: 400px;">
+                            <tr>
+                                <td>
+                                    @T("nop.Plugin.Order.Amazon.CartId")
+                                </td>
+                                <td>
+                                    @Model.OrderAmazon.CartId
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    @T("nop.Plugin.Order.Amazon.HMAC")
+                                </td>
+                                <td>
+                                    @Model.OrderAmazon.HMAC
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="panel panel-default">
+            <div class="panel-header">
+                <div class="col-xs-12">
+                    <h3>@T("nop.Plugin.Order.Amazon.CartItems")</h3>
+                </div>
+            </div>
+            <div class="panel-body">
+
+                <div class="form-group">
+
+                    <div class="col-md-12">
+                        <div id="cartitems-grid">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var totalPrice = "";
+        var purchaseUrl = "";
+        $(document).ready(function() {
+            $("#cartitems-grid").kendoGrid({
+                remove: function (e) {
+                    return;
+                },
+                dataSource: {
+                    type: "json",
+                    transport: {
+                        read: {
+                            url: "@Html.Raw(Url.Action("CartGet", "OrderAmazon"))",
+                            type: "POST",
+                            dataType: "json",
+                            data: {
+                                orderAmazonId: @Model.OrderAmazon.Id,
+                            }
+                        },
+                        update: {
+                            url: "@Html.Raw(Url.Action("CartModify", "OrderAmazon"))",
+                            dataType: "json",
+                            type: "POST"
+                        },
+                        destroy: {
+                            url: "@Html.Raw(Url.Action("CartDelete", "OrderAmazon"))",
+                            dataType: "json",
+                            type: "POST"
+                        }
+                    },
+                    requestEnd: function (e) {
+                        if (e.type == "read") {
+                            var response = e.response;
+                            if (response) {
+                                //store extra data
+                                if (response.SubTotal!==null)
+                                    totalPrice = response.SubTotal.FormattedPrice;
+                                if (response.PurchaseURL !== null)
+                                purchaseUrl = response.PurchaseURL;
+                            }
+                        }
+                    },
+                    schema: {
+                        data: "CartItems",
+                        errors: "Errors",
+                        model: {
+                            id:"OrderAmazonId",
+                            fields: {
+                                Id: { editable: false, nullable: true },
+                                CartItemId: { editable: false, nullable: true },
+                                ASIN: { editable: false, nullable: true },
+                                Quantity: { type: "number", validation: { required: true, min: 0 }},
+                            }
+                        }
+                    },
+
+                    error: function (e) {
+                        display_kendoui_grid_error(e);
+                        // Cancel the changes
+                        this.cancelChanges();
+                    },
+                    pageSize: 10,
+                    serverPaging: true,
+                    serverFiltering: true,
+                    serverSorting: true,
+
+                },
+                pageable: {
+                    refresh: true,
+                    pageSizes: 10,
+                },
+                editable: {
+                    mode: "inline"
+                },
+                scrollable: false,
+                dataBound: onDataBound,
+                columns: [
+
+                    {
+                        field: "ASIN",
+                        title:"@T("nop.Plugin.Order.Amazon.ASIN")"
+                    },
+                    {
+                        field: "Title",
+                        title:"@T("nop.Plugin.Order.Amazon.Title")"
+                    },
+                    {
+                        field: "Quantity",
+                        title:"@T("nop.Plugin.Order.Amazon.Quantity")"
+                    }
+                    ,
+                    {
+                        field: "Price.FormattedPrice",
+                        title:"@T("nop.Plugin.Order.Amazon.Price")"
+                    },
+                    {
+                        field: "ItemTotal.FormattedPrice",
+                        title:"@T("nop.Plugin.Order.Amazon.TotalPrice")",
+                        footerTemplate: '<span id="totalPrice"></span>'
+                    },
+                    {
+                        command: ["edit", "destroy"], title: "&nbsp;", width: "250px",
+                        footerTemplate: '<a id="purchaseUrl" href="" target="_blank" class="btn btn-warning">Purchase</a>'
+                    }
+
+                ]});
+        });
+        function onDataBound(e) {
+                $('#totalPrice').text(totalPrice);
+                    $('#purchaseUrl').prop("href",purchaseUrl);
+        }
+    </script>
+}

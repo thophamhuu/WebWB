@@ -1,0 +1,194 @@
+﻿@using Nop.Web.Framework;
+@{
+    Layout = "~/Administration/Views/Shared/_AdminLayout.cshtml";
+    var defaultGridPageSize = 25;
+    var gridPageSizes = 25;
+
+    var countrys = ViewBag.Country as List<SelectListItem>;
+    int countryId = Int32.Parse(ViewBag.CountryID.ToString());
+    Html.SetActiveMenuItemSystemName("Nop.Plugin.Worldbuy.StateProvinceWB.List");
+}
+@{
+
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            @T("Nop.Plugin.Worldbuy.StateProvinceWB")
+        </h1>
+        <div class="pull-right">
+            <button type="button" name="importexcel" class="btn bg-olive" data-toggle="modal" data-target="#importexcel-window">
+                <i class="fa fa-upload"></i>
+                @T("Admin.Common.Import")
+            </button>
+        </div>
+    </div>
+    <div class="content">
+        <div class="form-horizontal">
+
+            <div class="panel-group">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <div class="search">
+                            @using (Html.BeginForm("List", "StateProvinceWB", new { area = "Admin" }))
+                            {
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <div class="col-md-4">
+                                                Country
+                                            </div>
+                                            <div class="col-md-8">
+                                                <select name="countryId" class="form-control">
+                                                    <option>Country</option>
+                                                    @foreach (var country in countrys)
+                                                    {
+                                                        <option selected="@country.Selected" value="@country.Value">@country.Text</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-md-8 col-md-offset-4">
+                                                <button type="submit" id="search-categories" class="btn btn-primary btn-search"><i class="fa fa-search"></i>@T("Admin.Common.Search")</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div id="provinces-grid">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="importexcel-window" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="importexcel-window-title">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="importexcel-window-title">@T("Admin.Common.ImportFromExcel")</h4>
+                </div>
+                @using (Html.BeginForm("ImportFromXlsx", "StateProvinceWB", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                    <div class="form-horizontal">
+                        <div class="modal-body">
+                            @Html.AntiForgeryToken()
+                            <ul class="common-list">
+                                <li>
+                                    <em>@T("Admin.Catalog.Categories.List.ImportFromExcelTip")</em>
+                                </li>
+                                <li>
+                                    <em>@T("Admin.Common.ImportFromExcel.ManyRecordsWarning")</em>
+                                </li>
+                            </ul>
+                            <div class="form-group">
+                                <div class="col-md-2">
+                                    <div class="label-wrapper">
+                                        <label class="control-label">
+                                            @T("Admin.Common.ExcelFile")
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <select name="countryId" class="form-control">
+                                        <option>Country</option>
+                                        @foreach (var country in countrys)
+                                        {
+                                            <option selected="@country.Selected" value="@country.Value">@country.Text</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-5">
+                                    <input type="file" id="importexcelfile" name="importexcelfile" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">
+                                @T("Admin.Common.ImportFromExcel")
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function () {
+            $("#provinces-grid").kendoGrid({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: "@Url.Action("Read", "StateProvinceWB",new { countryId = countryId})",
+                            type: "jsonp"
+                        },
+                          update: {
+                            url:"@Url.Action("Update", "StateProvinceWB")",
+                            dataType: "json",
+                            type: "POST"
+                        },
+                        destroy: {
+                            url:"@Url.Action("Delete", "StateProvinceWB")",
+                            dataType: "json",
+                            type: "POST"
+                        },
+                        parameterMap: function (options, operation) {
+                            if (operation !== "read" && options.models) {
+                                return { models: kendo.stringify(options.models) };
+                            }
+                        }
+                    },
+                    schema: {
+                        model: {
+                            id: "Id",
+                            fields: {
+                                Id: { editable: false, nullable: true },
+                                Name: { field: "Name"},
+                                PostalCode: { field: "PostalCode"},
+                                Abbreviation: { field: "Abbreviation"},
+                            }
+                        }
+                    },
+                    batch: true,
+                    pageSize: 100,
+                    sort: { field: 'STT', dir: 'asc' },
+                },
+                //height: 550,
+                groupable: true,
+                sortable: true,
+
+                pageable: {
+                    refresh: true,
+                    pageSizes: true,
+                    buttonCount: 5
+                },
+                columns: [
+                     {
+                         field: "STT",
+                         title: "@T("Nop.Plugin.Worldbuy.StateProvinceWB.STT")",
+                         width: 50
+                     },
+                   {
+                       field: "Name",
+                       title: "@T("Nop.Plugin.Worldbuy.StateProvinceWB.Title")",
+                       width: 200
+                   }, {
+                       field: "Abbreviation",
+                       title: "@T("Nop.Plugin.Worldbuy.StateProvinceWB.Abbreviation")",
+                       width: 100,
+                   }, {
+                       field: "PostalCode",
+                       title: "@T("Nop.Plugin.Worldbuy.StateProvinceWB.PostalCode")",
+                       width: 200,
+                   },
+                   { command: ["edit","destroy"], title: " ", width: "100px" },
+                ],
+                editable: "inline"
+            });
+        });
+    </script>
+}

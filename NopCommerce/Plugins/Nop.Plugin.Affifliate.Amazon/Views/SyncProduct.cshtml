@@ -1,0 +1,41 @@
+﻿@using Nop.Web.Framework;
+@using Nop.Core.Infrastructure;
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<Nop.Core.Domain.Common.AdminAreaSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<Nop.Core.Domain.Common.AdminAreaSettings>().GridPageSizes;
+    Html.SetActiveMenuItemSystemName("Affiliate.Plugins.Amazon.Product");
+}
+@model Nop.Plugin.Affiliate.Amazon.Models.ProductParameter
+@{
+
+
+    using (Ajax.BeginForm("SyncProduct", "AffiliateAmazon", new { id = Model.Id }, new AjaxOptions { OnBegin = "OnBegin", OnSuccess = "OnSuccess", OnFailure = "OnFailure" }, new { enctype = "multipart/form-data" }))
+    {
+        <div class="modal-body">
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(model => model.Id)
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.NopLabelFor(model => model.Properties)
+                </div>
+                <div class="col-md-9">
+                    @Html.NopDropDownListFor(model => model.Properties, Model.SyncPropertyList, new { @class = "select2", multiple = "" })
+                    @Html.ValidationMessageFor(model => model.Properties)
+                </div>
+            </div>
+
+        </div>
+        <div class="model-footer">
+            <div class="form-group">
+                <div class="col-md-3">
+                    &nbsp;
+                </div>
+                <div class="col-md-9">
+                    <input type="submit" id="sync" name="sync" class="btn bg-blue" value="@T("Nop.Plugin.Affiliate.Amazon.Sync")" />
+                </div>
+            </div>
+        </div>
+    }
+
+
+}

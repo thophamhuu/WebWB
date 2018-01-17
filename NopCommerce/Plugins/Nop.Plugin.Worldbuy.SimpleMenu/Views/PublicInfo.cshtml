@@ -1,0 +1,48 @@
+﻿@using Nop.Web.Framework
+@using Nop.Plugin.Worldbuy.SimpleMenu.Models
+@model IEnumerable<WB_SimpleMenuModel>
+@if (Model != null)
+{
+    foreach (var menu in Model)
+    {
+        <ul class="worldbuy-simplemenu">
+            @if (menu.Items != null)
+            {
+                foreach (var item in menu.Items)
+                {
+                    <li class="worldbuy-simplemenu-item">
+                        @if (menu.Settings.UseIconImage)
+                        {
+                            if (menu.Settings.IconToRight != null && menu.Settings.IconToRight)
+                            {
+                                <a href="@item.Url">
+                                    @item.Title
+                                    @if (item.IconUrlImage != "")
+                                    {
+                                        <span class="rtl">
+                                            <img alt="@item.Title" src="@Url.Content(item.IconUrlImage)" />
+                                        </span>
+                                    }
+
+                                </a>
+                            }
+                            else
+                            {
+
+                                <a href="@item.Url">
+                                    @if (item.IconUrlImage != "")
+                                    {
+                                        <span>
+                                            <img alt="@item.Title" src="@Url.Content(item.IconUrlImage)" />
+                                        </span>
+                                    }
+                                    @item.Title
+                                </a>
+                            }
+                        }
+                    </li>
+                }
+            }
+        </ul>
+    }
+}

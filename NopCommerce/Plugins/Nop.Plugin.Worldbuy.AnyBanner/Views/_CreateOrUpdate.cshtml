@@ -1,0 +1,54 @@
+﻿@using Nop.Services.Stores
+@using Nop.Core.Infrastructure
+@using Nop.Web.Framework.Events;
+@using Nop.Services.Events
+@model Nop.Plugin.Worldbuy.AnyBanner.Models.WB_AnyBannerModel
+
+
+<script>
+    $(document).ready(function () {
+        bindBootstrapTabSelectEvent('AnyBanner-edit');
+    });
+</script>
+
+<div class="content">
+
+    <div class="form-horizontal">
+        <div id="AnyBanner-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-settings", @T("Nop.Plugin.Worldbuy.AnyBanner.Settings"), true)
+                @Html.RenderBootstrapTabHeader("tab-items", @T("Nop.Plugin.Worldbuy.AnyBanner.Items"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-settings", @TabSettings(), true)
+                @Html.RenderBootstrapTabContent("tab-items", @TabItems())
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "AnyBanner-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@*save selected tab name*@
+<input type="hidden" id="selected-tab-name" name="selected-tab-name" value="@(Html.GetSelectedTabName())">
+
+@Html.DeleteConfirmation("AnyBanner-delete")
+
+@helper TabSettings()
+{
+    @Html.Partial("~/Plugins/Worldbuy.AnyBanner/Views/_CreateOrUpdate.Settings.cshtml", Model)
+
+
+}
+@helper TabItems()
+{
+    @Html.Partial("~/Plugins/Worldbuy.AnyBanner/Views/_CreateOrUpdate.Items.cshtml", Model)
+}

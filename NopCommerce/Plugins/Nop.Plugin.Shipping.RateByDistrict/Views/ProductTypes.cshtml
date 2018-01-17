@@ -1,0 +1,109 @@
+﻿@using Nop.Services.Stores
+@using Nop.Core.Infrastructure
+@{
+    Layout = "~/Administration/Views/Shared/_AdminLayout.cshtml";
+    //page title
+    ViewBag.Title = T("Admin.Configuration.Shipping.Methods").Text;
+    //active menu item (system name)
+    Html.SetActiveMenuItemSystemName("Shipping providers");
+}
+@using (Html.BeginForm("ProductTypes", "RateByDistrict", new { area = "Admin" }, FormMethod.Post, new { id = "form-shipping-producttype" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            @T("Plugins.Shipping.RateByDistrict.ProductTypes.Manage")
+        </h1>
+        <div class="pull-right">
+            <input type="submit" id="btnAddNewOption" class="btn btn-primary" value="@T("Plugins.Shipping.RateByDistrict.AddRecord")" onclick="javascript:OpenWindow('@Url.Action("ProductType","RateByDistrict",new { Id=0,formId="form-shipping-producttype",btnId="btnRefresh"})', 800, 800, true); return false;" />
+            <input type="submit" id="btnRefresh" class="btn btn-default" style="display: none" />
+
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="form-horizontal">
+            <div class="panel-group">
+
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <div id="producttype-grid"></div>
+
+                        <script>
+                            $(document).ready(function () {
+                            $("#producttype-grid").kendoGrid({
+                                dataSource: {
+                                    type: "json",
+                                    transport: {
+                                        read: {
+                                            url: "@Html.Raw(Url.Action("ProductTypes", "RateByDistrict"))",
+                                            type: "POST",
+                                            dataType: "json",
+                                            data: addAntiForgeryToken
+                                        }
+                                    },
+                                    schema: {
+                                        data: "Data",
+                                        total: "Total",
+                                        errors: "Errors"
+                                    },
+                                    error: function(e) {
+                                        display_kendoui_grid_error(e);
+                                        // Cancel the changes
+                                        this.cancelChanges();
+                                    },
+                                    serverPaging: true,
+                                    serverFiltering: true,
+                                    serverSorting: true
+                                },
+                                pageable: {
+                                    refresh: true,
+                                    numeric: false,
+                                    previousNext: false,
+                                    info: false,
+                                    @Html.Partial("_GridPagerMessages")
+                                },
+                                editable: {
+                                    confirmation: "@T("Admin.Common.DeleteConfirmation")",
+                                    mode: "inline"
+                                },
+                                scrollable: false,
+                                columns: [
+                                {
+                                    field: "ProductTypeName",
+                                    title: "@T("Plugins.Shipping.RateByDistrict.ProductType.Fields.Name")",
+                                    width: 200
+                                },{
+                                        field: "AdditionalFixedCost",
+                                    title: "@T("Plugins.Shipping.RateByDistrict.ProductType.Fields.AdditionalFixedCost")",
+                                    width: 200
+                                }, {
+                                    field: "Id",
+                                    title: "@T("Admin.Common.Edit")",
+                                    width: 100,
+                                    headerAttributes: { style: "text-align:center" },
+                                    attributes: { style: "text-align:center" },
+                                    template: '<button type="button" class="btn btn-default" onclick="javascript:OpenWindow(\'/Admin/RateByDistrict/ProductType?Id=#=Id#&formId=form-shipping-producttype&btnId=btnRefresh\',800,800,true); return false;"><i class="fa fa-pencil"></i>@T("Admin.Common.Edit")</button>'
+                                    }
+                                ]
+                                });
+
+                            $('#btnRefresh')
+                                .click(function () {
+                                    //refresh grid
+                                    var grid = $("#producttype-grid").data('kendoGrid');
+                                    //grid.dataSource.page(1); //new search. Set page size to 1
+                                    grid.dataSource.read();
+
+                                    //return false to don't reload a page
+                                    return false;
+                                });
+
+                        });
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

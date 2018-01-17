@@ -1,0 +1,178 @@
+﻿@using Nop.Services.Stores
+@using Nop.Core.Infrastructure
+@using Nop.Web.Framework.Events
+@using Nop.Services.Events
+@using Nop.Plugin.Worldbuy.AnyBanner.Models
+@model WB_AnyBannerModel
+
+<div class="form-group">
+    <div class="col-md-12">
+        <div id="AnyBannerItems-grid">
+
+        </div>
+    </div>
+    <script>
+        $(document).ready(function() {
+            $("#AnyBannerItems-grid").kendoGrid({
+                dataSource: {
+                    type: "json",
+                    transport: {
+                        read: {
+                            url: "@Html.Raw(Url.Action("Items", "AnyBanner"))",
+                            type: "POST",
+                            dataType: "json",
+                            data: {
+                                bannerId: @Model.Id,
+                            }
+                        },
+                        update: {
+                            url: "@Html.Raw(Url.Action("SaveItem", "AnyBanner"))",
+                            type: "POST",
+                            dataType: "json",
+                        }
+                    },
+                    schema: {
+                        model: {
+                            id: "Id",
+                            fields: {
+                                Id: { editable: false, nullable: true },
+                                ImageUrl: { editable: false },
+                                Title: { editable: true, type: "string" },
+                                Alt: { editable: true, type: "string" },
+                                Url: { editable: true,type:"string"},
+                                IsActived: { editable: true, type: "boolean" },
+                                Order: { editable: true, type: "number" },
+                            }
+                        }
+                    },
+                    error: function (e) {
+                        display_kendoui_grid_error(e);
+                        // Cancel the changes
+                        this.cancelChanges();
+                    },
+                },
+                editable: {
+                    mode: "inline"
+                },
+                columns: [
+                    {
+                        template: "<div class='item-icon' style='width:50px;height:50px;display:block'><img src='#:data.ImageUrl#'/></div>",
+                        field: "ImageUrl",
+                        title: "@T("Nop.Plugin.Worldbuy.AnyBanner.Item.Image")",
+                        width:100
+                    },
+                    {
+                        field: "Title",
+                        title:"@T("Nop.Plugin.Worldbuy.AnyBanner.Item.Title")"
+                    },
+                    {
+                        field: "Alt",
+                        title:"@T("Nop.Plugin.Worldbuy.AnyBanner.Item.Alt")"
+                    },
+                    {
+                        field: "Url",
+                        title:"@T("Nop.Plugin.Worldbuy.AnyBanner.Item.Url")"
+                    },
+                    {
+                        template: renderIsActived,
+                        field: "IsActived",
+                        title:"@T("Nop.Plugin.Worldbuy.AnyBanner.Item.IsActived")"
+                    },
+                    {
+                        field: "Order",
+                        title:"@T("Nop.Plugin.Worldbuy.AnyBanner.Item.Order")"
+                    },
+                    {
+                        command: ["edit", { text: "Delete", click: deleteItem }], title: "&nbsp;", width: "150px",
+                    }
+                ]});
+        });
+
+        function renderIsActived(e) {
+            var html = "";
+            console.log(e);
+            if (e.IsActived) {
+                html += "<label class='label bg-green'>@T("Nop.Plugin.Worldbuy.Enabled")</label>";
+            }
+            else {
+                html += "<label class='label bg-red'>@T("Nop.Plugin.Worldbuy.Disabled")</label>";
+            }
+            return html;
+        }
+    </script>
+
+</div>
+
+
+<div id="item">
+    @Html.Action("Item", "AnyBanner", new { bannerId = Model.Id, id = 0 })
+</div>
+<script>
+    $(document).ready(function () {
+        $("body").on("click", "#updateItem", function () {
+
+            var itemForm = document.getElementById("itemForm");
+            console.log()
+            // Create FormData object
+            var formData = new FormData(itemForm);
+            var files = $("#itemForm input[name=file]");
+            // Looping over all files and add it to FormData object
+            for (var i = 0; i < files.length; i++) {
+                formData.append(files[i].name, files[i]);
+            }
+
+
+
+
+            $.ajax({
+                type: "Post",
+                url:"@Url.Action("SaveItem", "AnyBanner",new { area="Admin"})",
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function (data) {
+                        var grid = $("#AnyBannerItems-grid").data('kendoGrid');
+                        grid.dataSource.read();
+                        LoadItem(@Model.Id,0);
+                    }
+                })
+            })
+        });
+
+        function editItem(e) {
+            e.preventDefault();
+            var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
+            LoadItem( @Model.Id, dataItem.Id);
+
+    }
+
+        function deleteItem(e) {
+            if (!window.confirm("@T("Nop.Plugin.Worldbuy.Confirm")!"))
+                return false;
+            e.preventDefault();
+            var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
+            $.ajax({
+                type: "Post",
+                url: "@Url.Action("DeleteItem","AnyBanner",new { area="Admin"})",
+                data: { Id: dataItem.Id },
+                dataType: "json",
+                success: function (data) {
+                    if (data.Status) {
+                        var grid = $("#AnyBannerItems-grid").data('kendoGrid');
+                        grid.dataSource.read();
+                    }
+                }
+            })
+
+        }
+        function LoadItem(bannerId, id) {
+        $.ajax({
+                    type: "Get",
+                    url:"@Url.Action("Item", "AnyBanner",new { area="Admin"})",
+                    data: { id, bannerId},
+                    dataType:"html",
+                    success: function (data) {
+                        var grid = $("#item").html(data);
+                    }
+                })}
+</script>

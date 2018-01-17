@@ -1,0 +1,9 @@
+﻿Group: Affiliate
+FriendlyName: Affiliate Ebay
+SystemName: Affiliate.Ebay
+Version: 1.00
+SupportedVersions: 3.90
+Author: WorldBuy team
+DisplayOrder: 5
+FileName: Nop.Plugin.Affiliate.Ebay.dll
+Description: Affiliate Ebay Api

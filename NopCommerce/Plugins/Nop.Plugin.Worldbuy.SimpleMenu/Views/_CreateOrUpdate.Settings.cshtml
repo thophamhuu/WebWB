@@ -1,0 +1,72 @@
+﻿@using Nop.Services.Stores
+@using Nop.Core.Infrastructure
+@using Nop.Web.Framework.Events
+@using Nop.Services.Events
+@using Nop.Plugin.Worldbuy.SimpleMenu.Models
+@model WB_SimpleMenuModel
+@using (Html.BeginForm(null, null, FormMethod.Post, new { id = "simpleMenu-form" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(false)
+    <div class="form-group">
+        <div class="col-md-3">
+            @Html.NopLabelFor(model => model.Name)
+        </div>
+        <div class="col-md-6">
+            @Html.NopEditorFor(model => model.Name)
+            @Html.ValidationMessageFor(model => model.Name)
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-3">
+            @Html.NopLabelFor(model => model.IsActived)
+        </div>
+        <div class="col-md-6">
+            @Html.NopEditorFor(model => model.IsActived)
+            @Html.ValidationMessageFor(model => model.IsActived)
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-3">
+            @Html.NopLabelFor(model => model.WidgetZone)
+        </div>
+        <div class="col-md-6">
+            @Html.NopDropDownListFor(model => model.WidgetZone, Model.WidgetZones)
+            @Html.ValidationMessageFor(model => model.WidgetZone)
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <div class="col-md-3">
+            @Html.NopLabelFor(model => model.Settings.UseIconImage)
+        </div>
+        <div class="col-md-6">
+            @Html.NopEditorFor(model => model.Settings.UseIconImage)
+            @Html.ValidationMessageFor(model => model.Settings.UseIconImage)
+        </div>
+    </div>
+
+    <div class="form-group">
+        <div class="col-md-3">
+            @Html.NopLabelFor(model => model.Settings.IconToRight)
+        </div>
+        <div class="col-md-6">
+            @Html.NopEditorFor(model => model.Settings.IconToRight)
+            @Html.ValidationMessageFor(model => model.Settings.IconToRight)
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-3"></div>
+        <div class="col-md-6">
+            <button type="submit" name="save" class="btn bg-blue">
+                <i class="fa fa-floppy-o"></i>
+                @T("nop.plugin.worldbuy.save")
+            </button>
+            <button type="submit" name="save-continue" class="btn bg-blue">
+                <i class="fa fa-floppy-o"></i>
+                @T("nop.plugin.worldbuy.savecontinue")
+            </button>
+        </div>
+    </div>
+}
+

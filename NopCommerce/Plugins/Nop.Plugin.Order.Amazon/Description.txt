@@ -1,0 +1,9 @@
+﻿Group: Order
+FriendlyName:Shopping Cart & Order Amazon Affiliate
+SystemName: Order.Amazon
+Version: 1.00
+SupportedVersions: 3.90
+Author: WorldBuy team
+DisplayOrder: 5
+FileName: Nop.Plugin.Order.Amazon.dll
+Description:Shopping Cart & Order - Affiliate Amazon Api

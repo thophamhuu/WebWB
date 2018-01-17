@@ -1,0 +1,9 @@
+﻿Group: Tax providers
+FriendlyName: Manual (Fixed or By Country/State/Zip) Worldbuy
+SystemName: Tax.Worldbuy.FixedOrByCountryStateZip
+Version: 1.00
+SupportedVersions: 3.90
+Author: Worldbuy team
+DisplayOrder: 1
+FileName: Nop.Plugin.Tax.Worldbuy.FixedOrByCountryStateZip.dll
+Description: This plugin allow to configure fix tax rates or tax rates by category, coutries, states and zip codes

@@ -1,0 +1,514 @@
+﻿@model Nop.Plugin.Order.Amazon.Models.OrderModel
+
+@using Nop.Core.Domain.Tax;
+@using Nop.Core.Domain.Orders;
+@using Nop.Services
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            @if (!Model.IsLoggedInAsVendor)
+            {
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderStatus)
+                    </div>
+                    <div class="col-md-9">
+                        <div class="input-group input-group-short">
+                            <div class="input-group-text">
+                                <strong>
+                                    @Html.NopDisplayFor(model => model.OrderStatus)
+                                </strong>
+                            </div>
+                            <div class="input-group-btn">
+                                @if (!Model.HasCart)
+                                {
+                                    <a  class="btn bg-yellow" href="@Url.Action("CartCreate","OrderAmazon",new { orderId = Model.Id})">@T("Nop.Plugin.Order.Amazon.CartCreate")</a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                //vendors should see whether or order is cancelled
+                if (Model.OrderStatusId == (int)OrderStatus.Cancelled)
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            &nbsp;
+                        </div>
+                        <div class="col-md-9">
+                            <strong>
+                                @T("Admin.Orders.Fields.OrderStatus.CancelledNotification")
+                            </strong>
+                        </div>
+                    </div>
+                }
+            }
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.NopLabelFor(model => model.CustomOrderNumber)
+                </div>
+                <div class="col-md-9">
+                    @Html.NopDisplayFor(model => model.CustomOrderNumber)
+                </div>
+            </div>           
+            @if (!Model.IsLoggedInAsVendor)
+            {
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderGuid)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.OrderGuid)
+                    </div>
+                </div>
+            }
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.NopLabelFor(model => model.StoreName)
+                </div>
+                <div class="col-md-9">
+                    @Html.NopDisplayFor(model => model.StoreName)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!Model.IsLoggedInAsVendor)
+    {
+    <div class="panel panel-default">
+        <div class="panel-body">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.CustomerId)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.ActionLink(Model.CustomerInfo, "Edit", "Customer", new { id = Model.CustomerId }, new { })
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.CustomerIp)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.CustomerIp)
+                    </div>
+                </div>
+                @if (Model.RecurringPaymentId > 0)
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.RecurringPaymentId)
+                        </div>
+                        <div class="col-md-9">
+                            <a href="@Url.Action("Edit", "RecurringPayment", new {id = Model.RecurringPaymentId})">@T("Admin.Common.View")</a>
+                        </div>
+                    </div>
+                }
+                @if (!String.IsNullOrEmpty(Model.VatNumber))
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.VatNumber)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.NopDisplayFor(model => model.VatNumber)
+                        </div>
+                    </div>
+                }
+                @if (Model.AffiliateId > 0)
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.AffiliateId)
+                        </div>
+                        <div class="col-md-9">
+                            <a href="@Url.Action("Edit", "Affiliate", new {id = Model.AffiliateId})">@Model.AffiliateName - @T("Admin.Common.View")</a>
+                        </div>
+                    </div>
+                }
+                <div class="form-group">
+                    <div class="col-md-3">
+                        <div class="label-wrapper">
+                            <label class="control-label">@T("Admin.Orders.Fields.OrderSubtotal")</label>
+                            <div class="ico-help" title="@T("Admin.Orders.Fields.OrderSubtotal.Hint")">
+                                <i class="fa fa-question-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="row">
+                            @if (Model.AllowCustomersToSelectTaxDisplayType || Model.TaxDisplayType == TaxDisplayType.IncludingTax)
+                            {
+                                <div class="col-md-2">
+                                    <div class="form-text-row">
+                                        @Html.DisplayFor(model => model.OrderSubtotalInclTax) <strong>@T("Admin.Orders.Fields.OrderSubtotalInclTax")</strong>
+                                    </div>
+                                </div>
+                            }
+                            @if (Model.AllowCustomersToSelectTaxDisplayType || Model.TaxDisplayType == TaxDisplayType.ExcludingTax)
+                            {
+                                <div class="col-md-10">
+                                    <div class="form-text-row">
+                                        @Html.DisplayFor(model => model.OrderSubtotalExclTax) <strong>@T("Admin.Orders.Fields.OrderSubtotalExclTax")</strong>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                @if (((Model.AllowCustomersToSelectTaxDisplayType || Model.TaxDisplayType == TaxDisplayType.IncludingTax) && !String.IsNullOrEmpty(Model.OrderSubTotalDiscountInclTax)) ||
+                    ((Model.AllowCustomersToSelectTaxDisplayType || Model.TaxDisplayType == TaxDisplayType.ExcludingTax) && !String.IsNullOrEmpty(Model.OrderSubTotalDiscountExclTax)))
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            <div class="label-wrapper">
+                                <label class="control-label">@T("Admin.Orders.Fields.OrderSubTotalDiscount")</label>
+                                <div class="ico-help" title="@T("Admin.Orders.Fields.OrderSubTotalDiscount.Hint")">
+                                    <i class="fa fa-question-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="row">
+                                @if ((Model.AllowCustomersToSelectTaxDisplayType || Model.TaxDisplayType == TaxDisplayType.IncludingTax) && !String.IsNullOrEmpty(Model.OrderSubTotalDiscountInclTax))
+                                {
+                                    <div class="col-md-2">
+                                        <div class="form-text-row">
+                                            @Html.DisplayFor(model => model.OrderSubTotalDiscountInclTax) <strong>@T("Admin.Orders.Fields.OrderSubTotalDiscountInclTax")</strong>
+                                        </div>
+                                    </div>
+                                }
+                                @if ((Model.AllowCustomersToSelectTaxDisplayType || Model.TaxDisplayType == TaxDisplayType.ExcludingTax) && !String.IsNullOrEmpty(Model.OrderSubTotalDiscountExclTax))
+                                {
+                                    <div class="col-md-10">
+                                        <div class="form-text-row">
+                                            @Html.DisplayFor(model => model.OrderSubTotalDiscountExclTax) <strong>@T("Admin.Orders.Fields.OrderSubTotalDiscountExclTax")</strong>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+                <div class="form-group">
+                    <div class="col-md-3">
+                        <div class="label-wrapper">
+                            <label class="control-label">@T("Admin.Orders.Fields.OrderShipping")</label>
+                            <div class="ico-help" title="@T("Admin.Orders.Fields.OrderShipping.Hint")">
+                                <i class="fa fa-question-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="row">
+                            @if (Model.AllowCustomersToSelectTaxDisplayType || Model.TaxDisplayType == TaxDisplayType.IncludingTax)
+                            {
+                                <div class="col-md-2">
+                                    <div class="form-text-row">
+                                        @Html.DisplayFor(model => model.OrderShippingInclTax) <strong>@T("Admin.Orders.Fields.OrderShippingInclTax")</strong>
+                                    </div>
+                                </div>
+                            }
+                            @if (Model.AllowCustomersToSelectTaxDisplayType || Model.TaxDisplayType == TaxDisplayType.ExcludingTax)
+                            {
+                                <div class="col-md-2">
+                                    <div class="form-text-row">
+                                        @Html.DisplayFor(model => model.OrderShippingExclTax) <strong>@T("Admin.Orders.Fields.OrderShippingExclTax")</strong>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                @if (((Model.AllowCustomersToSelectTaxDisplayType || Model.TaxDisplayType == TaxDisplayType.IncludingTax) && !String.IsNullOrEmpty(Model.PaymentMethodAdditionalFeeInclTax)) ||
+                    ((Model.AllowCustomersToSelectTaxDisplayType || Model.TaxDisplayType == TaxDisplayType.ExcludingTax) && !String.IsNullOrEmpty(Model.PaymentMethodAdditionalFeeExclTax)))
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            <div class="label-wrapper">
+                                <label class="control-label">@T("Admin.Orders.Fields.PaymentMethodAdditionalFee")</label>
+                                <div class="ico-help" title="@T("Admin.Orders.Fields.PaymentMethodAdditionalFee.Hint")">
+                                    <i class="fa fa-question-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="row">
+                                @if (Model.AllowCustomersToSelectTaxDisplayType || Model.TaxDisplayType == TaxDisplayType.IncludingTax)
+                                {
+                                    <div class="col-md-2">
+                                        <div class="form-text-row">
+                                            @Html.DisplayFor(model => model.PaymentMethodAdditionalFeeInclTax) <strong>@T("Admin.Orders.Fields.PaymentMethodAdditionalFeeInclTax")</strong>
+                                        </div>
+                                    </div>
+                                }
+                                @if (Model.AllowCustomersToSelectTaxDisplayType || Model.TaxDisplayType == TaxDisplayType.ExcludingTax)
+                                {
+                                    <div class="col-md-2">
+                                        <div class="form-text-row">
+                                            @Html.DisplayFor(model => model.PaymentMethodAdditionalFeeExclTax) <strong>@T("Admin.Orders.Fields.PaymentMethodAdditionalFeeExclTax")</strong>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+                @if (Model.DisplayTaxRates)
+                {
+                    foreach (var tr in Model.TaxRates)
+                    {
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.NopLabelFor(model => model.Tax) <span style="padding-top: 7px;margin-right: 5px;float: right;">@tr.Rate%</span>
+                            </div>
+                            <div class="col-md-9">
+                                @tr.Value
+                            </div>
+                        </div>
+                    }
+                }
+                @if (Model.DisplayTax)
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.Tax)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.NopDisplayFor(model => model.Tax)
+                        </div>
+                    </div>
+                }
+                @if (!String.IsNullOrEmpty(Model.OrderTotalDiscount))
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.OrderTotalDiscount)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.NopDisplayFor(model => model.OrderTotalDiscount)
+                        </div>
+                    </div>
+                }
+                @foreach (var gc in Model.GiftCards)
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.GiftCards[0].CouponCode)
+                            <span style="padding-top: 7px;margin-right: 5px;float: right;">(@(gc.CouponCode))</span>
+                        </div>
+                        <div class="col-md-9">
+                            @Html.NopDisplay(gc.Amount)
+                        </div>
+                    </div>
+                }
+                @if (Model.RedeemedRewardPoints > 0)
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.RedeemedRewardPoints)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.NopDisplay(Model.RedeemedRewardPoints + @T("Admin.Orders.Fields.RedeemedRewardPoints.Points").Text + "/" + Model.RedeemedRewardPointsAmount)
+                        </div>
+                    </div>
+                }
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderTotal)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.OrderTotal)
+                    </div>
+                </div>
+                @if (!String.IsNullOrEmpty(Model.RefundedAmount))
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.RefundedAmount)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.NopDisplayFor(model => model.RefundedAmount)
+                        </div>
+                    </div>
+                }
+                @if (Model.UsedDiscounts.Count > 0)
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.UsedDiscounts)
+                        </div>
+                        <div class="col-md-9">
+                            @for (int i = 0; i < Model.UsedDiscounts.Count; i++)
+                            {
+                                var discount = Model.UsedDiscounts[i];
+                                <a href="@Url.Action("Edit", "Discount", new {id = discount.DiscountId})">@discount.DiscountName</a>
+                                if (i != Model.UsedDiscounts.Count - 1)
+                                {
+                                    <text>,</text>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.Profit)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.Profit)
+                    </div>
+                </div>
+               
+                @if (Model.AllowStoringCreditCardNumber)
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.CardType)
+                        </div>
+                        <div class="col-md-9">
+                            <div id="lblCardType">
+                                @Html.NopDisplayFor(model => model.CardType)
+                            </div>
+                            @Html.NopEditorFor(model => model.CardType)
+                        </div>
+                    </div>
+                }
+                @if (Model.AllowStoringCreditCardNumber)
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.CardName)
+                        </div>
+                        <div class="col-md-9">
+                            <div id="lblCardName">
+                                @Html.NopDisplayFor(model => model.CardName)
+                            </div>
+                            @Html.NopEditorFor(model => model.CardName)
+                        </div>
+                    </div>
+                }
+                @if (Model.AllowStoringCreditCardNumber || !String.IsNullOrEmpty(Model.CardNumber))
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.CardNumber)
+                        </div>
+                        <div class="col-md-9">
+                            <div id="lblCardNumber">
+                                @Html.NopDisplayFor(model => model.CardNumber)
+                            </div>
+                            @Html.NopEditorFor(model => model.CardNumber)
+                        </div>
+                    </div>
+                }
+                @if (Model.AllowStoringCreditCardNumber)
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.CardCvv2)
+                        </div>
+                        <div class="col-md-9">
+                            <div id="lblCardCvv2">
+                                @Html.NopDisplayFor(model => model.CardCvv2)
+                            </div>
+                            @Html.NopEditorFor(model => model.CardCvv2)
+                        </div>
+                    </div>
+                }
+                @if (Model.AllowStoringCreditCardNumber)
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.CardExpirationMonth)
+                        </div>
+                        <div class="col-md-9">
+                            <div id="lblCardExpirationMonth">
+                                @Html.NopDisplayFor(model => model.CardExpirationMonth)
+                            </div>
+                            @Html.NopEditorFor(model => model.CardExpirationMonth)
+                        </div>
+                    </div>
+                }
+                @if (Model.AllowStoringCreditCardNumber)
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.CardExpirationYear)
+                        </div>
+                        <div class="col-md-9">
+                            <div id="lblCardExpirationYear">
+                                @Html.NopDisplayFor(model => model.CardExpirationYear)
+                            </div>
+                            @Html.NopEditorFor(model => model.CardExpirationYear)
+                        </div>
+                    </div>
+                }
+                @if (Model.AllowStoringCreditCardNumber)
+                {
+                    <div class="form-group">
+                        <div class="col-md-9 col-md-offset-3">
+                            <button type="submit" name="btnEditCC" onclick="toggleCC(true);return false;" id="btnEditCC" class="btn btn-primary">
+                                @T("Admin.Orders.Fields.EditCC")
+                            </button>
+
+                            <button type="submit" name="btnSaveCC" id="btnSaveCC" class="btn btn-primary">
+                                @T("Admin.Orders.Fields.SaveCC")
+                            </button>
+                            @Html.ActionConfirmation("btnSaveCC")
+
+                            <button type="submit" name="btnCancelCC" onclick="toggleCC(false);return false;" id="btnCancelCC" class="btn bg-teal">
+                                @T("Admin.Common.Cancel")
+                            </button>
+                        </div>
+                    </div>
+                }
+                @if (!String.IsNullOrEmpty(Model.AuthorizationTransactionId))
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.AuthorizationTransactionId)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.NopDisplayFor(model => model.AuthorizationTransactionId)
+                        </div>
+                    </div>
+                }
+                @if (!String.IsNullOrEmpty(Model.CaptureTransactionId))
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.CaptureTransactionId)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.NopDisplayFor(model => model.CaptureTransactionId)
+                        </div>
+                    </div>
+                }
+                @if (!String.IsNullOrEmpty(Model.SubscriptionTransactionId))
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.NopLabelFor(model => model.SubscriptionTransactionId)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.NopDisplayFor(model => model.SubscriptionTransactionId)
+                        </div>
+                    </div>
+                }
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.PaymentMethod)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.PaymentMethod)
+                    </div>
+                </div>
+        </div>
+    </div>
+    }
+  
+</div>

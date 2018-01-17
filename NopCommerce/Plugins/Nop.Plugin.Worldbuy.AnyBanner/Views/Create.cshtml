@@ -1,0 +1,25 @@
+﻿@using Nop.Services.Stores
+@using Nop.Core.Infrastructure
+@using Nop.Web.Framework.Events;
+@using Nop.Services.Events
+@using Nop.Plugin.Worldbuy.AnyBanner.Models
+@model WB_AnyBannerModel
+
+@{
+    //page title
+    Layout = "~/Administration/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = T("Nop.Plugin.Worldbuy.Create").Text;
+    //active menu item (system name)
+    Html.SetActiveMenuItemSystemName("Nop.Plugin.Worldbuy.AnyBanner");
+}
+
+@using (Html.BeginForm(null, null, FormMethod.Post, new { id = "AnyBanner-form" }))
+{
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            @T("Nop.Plugin.Worldbuy.AddNew")
+            <small><i class="fa fa-arrow-circle-left"></i>@Html.ActionLink(T("Nop.Plugin.Worldbuy.BackToList").Text, "List")</small>
+        </h1>
+    </div>
+    @Html.Partial("~/Plugins/Worldbuy.AnyBanner/Views/_CreateOrUpdate.cshtml", Model)
+}

@@ -1,0 +1,151 @@
+﻿@using Nop.Services.Stores
+@using Nop.Core.Infrastructure
+@using Nop.Web.Framework.Events
+@using Nop.Services.Events
+@using Nop.Plugin.Worldbuy.SimpleMenu.Models
+@model WB_SimpleMenuModel
+
+<div class="form-group">
+    <div class="col-md-12">
+        <div id="simpleMenuItems-grid">
+
+        </div>
+    </div>
+    <script>
+        $(document).ready(function() {
+            $("#simpleMenuItems-grid").kendoGrid({
+                dataSource: {
+                    type: "json",
+                    transport: {
+                        read: {
+                            url: "@Html.Raw(Url.Action("Items", "SimpleMenu"))",
+                            type: "POST",
+                            dataType: "json",
+                            data: {
+                                menuId: @Model.Id,
+                            }
+                        }
+                    },
+                    schema: {
+                        model: {
+                            id: "id",
+                            fields: {
+                                Id: { editable: false, nullable: true },
+                                Title: { },
+                                Url: { },
+                            }
+                        }
+                    },
+                    error: function (e) {
+                        display_kendoui_grid_error(e);
+                        // Cancel the changes
+                        this.cancelChanges();
+                    },
+                },
+                editable: {
+                    mode: "inline"
+                },
+                columns: [
+                    {
+                        template: "<div class='item-icon' style='width:50px;height:50px;display:block'><img src='#:data.IconUrlImage#'/></div>",
+                        field: "IconUrlImage",
+                        title: "@T("Nop.Plugin.Worldbuy.SimpleMenu.Item.Image")",
+                        width:100
+                    },
+                    {
+                        field: "Title",
+                        title:"@T("Nop.Plugin.Worldbuy.SimpleMenu.Item.Title")"
+                    },
+                    {
+                        field: "Url",
+                        title:"@T("Nop.Plugin.Worldbuy.SimpleMenu.Item.Url")"
+                    },
+                    {
+                        field: "Order",
+                        title:"@T("Nop.Plugin.Worldbuy.SimpleMenu.Item.Order")"
+                    },
+                    {
+                        command: [{ text: "@T("nop.plugin.worldbuy.edit")", click: editItem }, { text: "@T("nop.plugin.worldbuy.delete")", click: deleteItem }], title: "&nbsp;", width: "150px",
+                    }
+                ]});
+        });
+    </script>
+
+</div>
+
+
+<div id="item">
+    @Html.Action("Item", "SimpleMenu", new { menuId = Model.Id, id = 0 })
+</div>
+<script>
+    $(document).ready(function () {
+        $("body").on("click", "#updateItem", function () {
+
+            var itemForm = document.getElementById("itemForm");
+            console.log()
+            // Create FormData object
+            var formData = new FormData(itemForm);
+            var files = $("#itemForm input[name=file]");
+            // Looping over all files and add it to FormData object
+            for (var i = 0; i < files.length; i++) {
+                formData.append(files[i].name, files[i]);
+            }
+
+
+
+            //formData.append("MenuID", $("input[name=MenuID]").val());
+            //formData.append("Url", $("input[name=Url]").val());
+            //formData.append("Title", $("input[name=Title]").val());
+
+            $.ajax({
+                type: "Post",
+                url:"@Url.Action("SaveItem", "SimpleMenu",new { area="Admin"})",
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function (data) {
+                        var grid = $("#simpleMenuItems-grid").data('kendoGrid');
+                        grid.dataSource.read();
+                        LoadItem(@Model.Id,0);
+                    }
+                })
+            })
+        });
+
+        function editItem(e) {
+            e.preventDefault();
+            var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
+            LoadItem( @Model.Id, dataItem.Id);
+
+    }
+
+        function deleteItem(e) {
+            if (!window.confirm("@T("nop.plugin.worldbuy.confirm")!"))
+                return false;
+            e.preventDefault();
+            var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
+            $.ajax({
+                type: "Post",
+                url: "@Url.Action("DeleteItem","SimpleMenu",new { area="Admin"})",
+                data: { Id: dataItem.Id },
+                dataType: "json",
+                success: function (data) {
+                    if (data.Status) {
+                        var grid = $("#simpleMenuItems-grid").data('kendoGrid');
+                        grid.dataSource.read();
+                    }
+                }
+            })
+
+        }
+        function LoadItem(menuId, id) {
+        $.ajax({
+                    type: "Get",
+                    url:"@Url.Action("Item", "SimpleMenu",new { area="Admin"})",
+                    data: { id, menuId},
+                    dataType:"html",
+                    success: function (data) {
+                        var grid = $("#item").html(data);
+                    }
+                })}
+</script>

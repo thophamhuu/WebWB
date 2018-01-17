@@ -276,3 +276,8 @@ __pycache__/
 *.btm.cs
 *.odx.cs
 *.xsd.cs
+
+# NopCommerce Plugins
+/NopCommerce/Presentation/Nop.Web/Plugins/*
+!/NopCommerce/Presentation/Nop.Web/Plugins/bin
+!/NopCommerce/Presentation/Nop.Web/Plugins/SevenSpikes.*

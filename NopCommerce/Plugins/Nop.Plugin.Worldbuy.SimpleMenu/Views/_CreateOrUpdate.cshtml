@@ -1,0 +1,55 @@
+﻿@using Nop.Services.Stores
+@using Nop.Core.Infrastructure
+@using Nop.Web.Framework.Events
+@using Nop.Services.Events
+@using Nop.Plugin.Worldbuy.SimpleMenu.Models
+@model WB_SimpleMenuModel
+
+
+<script>
+    $(document).ready(function () {
+        bindBootstrapTabSelectEvent('simpleMenu-edit');
+    });
+</script>
+
+<div class="content">
+
+    <div class="form-horizontal">
+        <div id="simpleMenu-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-settings", @T("Nop.Plugin.Worldbuy.SimpleMenu.Settings"), true)
+                @Html.RenderBootstrapTabHeader("tab-items", @T("Nop.Plugin.Worldbuy.SimpleMenu.Items"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-settings", @TabSettings(), true)
+                @Html.RenderBootstrapTabContent("tab-items", @TabItems())
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "simpleMenu-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@*save selected tab name*@
+<input type="hidden" id="selected-tab-name" name="selected-tab-name" value="@(Html.GetSelectedTabName())">
+
+@Html.DeleteConfirmation("simpleMenu-delete")
+
+@helper TabSettings()
+{
+    @Html.Partial("~/Plugins/Worldbuy.SimpleMenu/Views/_CreateOrUpdate.Settings.cshtml", Model)
+
+
+}
+@helper TabItems()
+{
+    @Html.Partial("~/Plugins/Worldbuy.SimpleMenu/Views/_CreateOrUpdate.Items.cshtml", Model)
+}

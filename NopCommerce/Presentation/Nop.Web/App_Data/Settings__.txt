@@ -1,0 +1,2 @@
+DataProvider: sqlserver
+DataConnectionString: Data Source=123.31.47.5;Initial Catalog=worldbuy_stg;Integrated Security=False;User Id=worldbuy_user;Password=w@2017;MultipleActiveResultSets=True

@@ -1,0 +1,237 @@
+﻿@using Nop.Services.Stores;
+@using Nop.Web.Framework;
+@using Nop.Web.Framework.UI;
+@model Nop.Plugin.Order.Ebay.Models.OrderEbayModel
+
+@{
+    Layout = "_AdminLayout.cshtml";
+
+    //page title
+    ViewBag.Title = T("Admin.Orders").Text;
+    //active menu item (system name)
+    Html.SetActiveMenuItemSystemName("Order.Ebay.ListOrderEbay");
+}
+
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("Admin.Orders.EditOrderDetails") - @Model.OrderEbay.OrderId
+        <small><i class="fa fa-arrow-circle-left"></i>@Html.ActionLink(T("Admin.Orders.BackToList").Text, "ListOrderEbay", new { area = "Admin" })</small>
+    </h1>
+    <div class="pull-right">
+    </div>
+</div>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="order-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("Admin.Orders.Info"), true)
+                @*@Html.RenderBootstrapTabHeader("tab-billing-info", @T("Admin.Orders.BillingInfo"))
+                @Html.RenderBootstrapTabHeader("tab-shipping-info", @T("Admin.Orders.ShippingInfo"))*@
+                @Html.RenderBootstrapTabHeader("tab-products", @T("Admin.Orders.Products"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                @*@Html.RenderBootstrapTabContent("tab-billing-info", @TabBillingInfo())
+                @Html.RenderBootstrapTabContent("tab-shipping-info", @TabShippingInfo())*@
+                @Html.RenderBootstrapTabContent("tab-products", @TabProducts())
+            </div>
+        </div>
+    </div>
+</div>
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderEbay.OrderId)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.OrderEbay.OrderId)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderEbay.CreationDate)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.OrderEbay.CreationDate)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderEbay.PaymentStatus)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.OrderEbay.PaymentStatus)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderEbay.OrderStatus)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.OrderEbay.OrderStatus)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderEbay.RefundedAmount)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.OrderEbay.RefundedAmount)
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderEbay.Adjustment)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.OrderEbay.Adjustment)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderEbay.DeliveryCost)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.OrderEbay.DeliveryCost)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderEbay.DeliveryDiscount)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.OrderEbay.DeliveryDiscount)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderEbay.Fee)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.OrderEbay.Fee)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderEbay.PriceDiscount)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.OrderEbay.PriceDiscount)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderEbay.PriceSubtotal)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.OrderEbay.PriceSubtotal)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderEbay.Tax)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.OrderEbay.Tax)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.OrderEbay.Total)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDisplayFor(model => model.OrderEbay.Total)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@*@helper TabBillingInfo()
+{
+    @Html.Partial("_OrderDetails.Billing", Model)
+}
+@helper TabShippingInfo()
+{
+    @Html.Partial("_OrderDetails.Shipping", Model)
+}*@
+@helper TabProducts()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="form-group">
+                    <div class="col-md-12" style="overflow-x: auto;">
+                        <table class="table table-hover table-bordered text-center">
+                            @*<col />*@
+                            <col />
+                            <col />
+                            <col />
+                            <col />
+                            <col />
+                            <thead>
+                                <tr>
+                                    @*<th>
+                                        @T("Admin.Orders.Products.Picture")
+                                    </th>*@
+                                    <th>
+                                        @T("Admin.Orders.Products.ProductName")
+                                    </th>   
+                                    <th>
+                                        @T("Admin.Orders.Products.Price")
+                                    </th>
+                                    <th>
+                                        @T("Admin.Orders.Products.Quantity")
+                                    </th>
+                                    <th>
+                                        @T("Admin.Orders.Products.LineItemStatus")
+                                    </th>
+                                    <th>
+                                        @T("Admin.Orders.Products.LineItemPaymentStatus")
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.OrderEbayDetail)
+                                {
+                                    <tr>
+                                        @*<td>
+                                            <img src="@item.PictureThumbnailUrl" alt="" title="" />
+                                        </td>*@
+                                        <td style="text-align: left; width: 15%;">
+                                            @*<em><a href="@Url.Action("Edit", "Product", new {id = item.ProductId})">@item.ProductName</a></em>*@
+                                            <div>@item.Title</div>
+                                        </td>
+                                        <td style="width: 15%;">
+                                            <div>@item.NetPrice</div>
+                                        </td>
+                                        <td style="width: 15%;">
+                                            <div>@item.Quantity</div>
+                                        </td>
+                                        <td style="width: 15%;">
+                                            <div>@item.LineItemStatus</div>
+                                        </td>
+                                        <td style="width: 15%;">
+                                            <div>@item.LineItemPaymentStatus</div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}

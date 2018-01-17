@@ -1,0 +1,171 @@
+﻿@model Nop.Plugin.Affiliate.Ebay.Models.ConfigurationModel
+@using Nop.Web.Framework;
+@using Nop.Web.Framework.UI;
+@using Nop.Core.Domain.Catalog;
+@{
+    Layout = "_AdminLayout.cshtml";
+
+    Html.AddCssFileParts("~/Plugins/Affiliate.Ebay/Content/select2/css/select2.min.css");
+    Html.AddScriptParts("~/Plugins/Affiliate.Ebay/Content/select2/js/select2.full.min.js");
+    Html.AddScriptParts("~/Plugins/Affiliate.Ebay/Content/jquery.unobtrusive-ajax.min.js");
+
+    //page title
+    ViewBag.Title = T("Plugin.Ebay.Configuration.Settings.CallApi").Text;
+    //active menu item (system name)
+    Html.SetActiveMenuItemSystemName("Affiliate.Ebay.Product");
+}
+
+@using (Ajax.BeginForm("CallApi", "AffiliateEbay", null, new AjaxOptions { OnBegin = "OnBegin", OnSuccess = "OnSuccess", OnFailure = "OnFailure" }, new { enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            @T("Plugin.Ebay.Configuration.Settings.CallApi")
+        </h1>
+    </div>
+
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="form-horizontal">
+                    <div class="form-group">
+                        <div class="col-md-4">
+                            @Html.NopLabelFor(model => model.CategoryId)
+                        </div>
+                        <div class="col-md-8">
+                            @Html.NopDropDownList("CategoryId", Model.AvailableCategory, new { @class = "select2", @style = "width:100%;" })
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-4">
+                            @Html.NopLabelFor(model => model.KeyWord)
+                        </div>
+                        <div class="col-md-8">
+                            @Html.NopEditorFor(model => model.KeyWord)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-8 col-md-offset-4">
+                            <button type="submit" name="save" class="btn btn-primary"><i class="fa fa-floppy-o"></i>Sync</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div id="products-grid"></div>
+
+            </div>
+        </div>
+    </div>
+}
+
+<script>
+    $(document).ready(function () {
+        loadTable();
+        $("#CategoryId").change(function () {
+            loadTable();
+        });
+    });
+
+    function additionalData() {
+        var data = {
+            CategoryId: $('#CategoryId').val(),
+            KeyWord: $('#KeyWord').val()
+        };
+        return data;
+    }
+    function OnBegin() {
+        $("#bg").show();
+    }
+    function OnSuccess(data) {
+        var grid = $('#products-grid').data('kendoGrid');
+        grid.dataSource.read();
+
+        $("#bg").hide();
+    }
+
+    function OnFailure(data) {
+        var grid = $('#products-grid').data('kendoGrid');
+        grid.dataSource.read();
+
+        $("#bg").hide();
+    }
+
+    $(".select2").select2();
+
+    function loadTable() {
+        $("#products-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("ProductList", "AffiliateEbay"))",
+                        type: "POST",
+                        dataType: "json",
+                        data: additionalData
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors"
+                },
+                error: function(e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                pageSize: 50,
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [20, 50, 100, 200, 500]
+            },
+            editable: {
+                confirmation: "@T("Admin.Common.DeleteConfirmation")",
+                mode: "inline"
+            },
+            scrollable: false,
+            columns: [
+                {
+                    field: "PictureThumbnailUrl",
+                    title: "@T("Admin.Catalog.Products.Fields.PictureThumbnailUrl")",
+                    template: '<img src="#=PictureThumbnailUrl#" />',
+                    width: 100
+                }, {
+                    field: "Name",
+                    title: "@T("Admin.Catalog.Products.Fields.Name")",
+                    template: '<a href="#= FullDescription #" target="_blank">#= Name #</a>',
+                    width: 300
+                }, {
+                    field: "Price",
+                    title: "@T("Admin.Catalog.Products.Fields.Price")",
+                    width: 150,
+                    template: "# if(ProductTypeId != @((int) ProductType.GroupedProduct)) {# #:Price# #}  #"
+                }, {
+                    field: "Published",
+                    title: "@T("Admin.Catalog.Products.Fields.Published")",
+                    width: 100,
+                    template: '# if(Published) {# <i class="fa fa-check true-icon"></i> #} else {# <i class="fa fa-close false-icon"></i> #} #'
+                }, {
+                    field: "Id",
+                    title: "@T("Admin.Common.Edit")",
+                    width: 100,
+                    headerAttributes: { style: "text-align:center" },
+                    attributes: { style: "text-align:center" },
+                    template: '<a class="btn btn-default" href="@Url.Action("Edit", "Product", new { Area = "Admin" })/#=Id#"><i class="fa fa-pencil"></i>@T("Admin.Common.Edit")</a>'
+                }
+            ]
+        });
+    }
+</script>
+
+
+<div id="bg" style="display:none;position:fixed;height:100%;width:100%;z-index:10000;background:rgba(0,0,0,.8);top:0;left:0;">
+    <span style="font-size:50px;background:#ddd;color:#333; padding:10px; position:absolute;top:50%;left:50%;display:block;margin-top:-45px;margin-left:-140px"><i class="fa fa-spin fa-spinner"></i> Syncing...</span>
+</div>

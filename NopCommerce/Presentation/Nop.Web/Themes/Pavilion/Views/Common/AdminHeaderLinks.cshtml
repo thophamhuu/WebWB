@@ -1,0 +1,66 @@
+﻿@model AdminHeaderLinksModel
+@using Nop.Web.Models.Common;
+@if (Model.IsCustomerImpersonated || Model.DisplayAdminLink)
+{
+    <style>
+        #admin-header-fixed {
+            position: fixed;
+            width: 100%;
+            height: 42px;
+            top: 0;
+            left: 0;
+            background: rgba(0,0,0,0.3);
+            z-index: 2040;
+            display: none;
+        }
+
+            #admin-header-fixed .center {
+                margin: auto;
+            }
+
+        @@media (min-width:1001px) {
+            #admin-header-fixed {
+                display: block
+            }
+
+                #admin-header-fixed a {
+                    color: #fff;
+                }
+
+            .header {
+                padding-top: 42px;
+            }
+
+            #admin-header-fixed .center {
+                width: 980px;
+            }
+        }
+
+        @@media (min-width:1281px) {
+            #admin-header-fixed .center {
+                width: 1200px;
+            }
+        }
+    </style>
+    <div id="admin-header-fixed">
+        <div class="center">
+            <div class="admin-header-links">
+                @if (Model.IsCustomerImpersonated)
+                {
+                    <div class="impersonate">
+                        <span>@string.Format(T("Account.ImpersonatedAs").Text, Model.ImpersonatedCustomerName)</span>
+                        <a href="@Url.RouteUrl("Logout")" class="finish-impersonation" title="@T("Account.ImpersonatedAs.Finish.Hint")">@T("Account.ImpersonatedAs.Finish")</a>
+                    </div>
+                }
+                @if (Model.DisplayAdminLink)
+                {
+                    <a href="@Url.Content("~/admin")" class="administration">@T("Account.Administration")</a>
+                }
+                @if (!String.IsNullOrEmpty(Model.EditPageUrl))
+                {
+                    <a href="@Model.EditPageUrl" class="manage-page">@T("Common.ManagePage")</a>
+                }
+            </div>
+        </div>
+    </div>
+}

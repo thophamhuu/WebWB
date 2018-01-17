@@ -1,0 +1,5 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<SupportedWidgetZones>
+  <WidgetZone code="header_upper_selectors">Header Upper Selectors</WidgetZone>
+  <WidgetZone code="header_lower_selectors">Header Lower Selectors</WidgetZone>
+</SupportedWidgetZones>

@@ -1,0 +1,76 @@
+﻿@model CheckoutPaymentModel
+@using Nop.Web.Models.Checkout;
+<div class="checkout-data">
+    @Html.Widget("op_checkout_payment_method_top")
+    <div class="section payment-method">
+        @if (Model.CheckoutPaymentMethodModel.DisplayRewardPoints && Model.CheckoutPaymentMethodModel.PaymentMethods.Count > 0)
+        {
+            <div class="use-reward-points">
+                @Html.CheckBoxFor(x => x.CheckoutPaymentMethodModel.UseRewardPoints, Model.CheckoutPaymentMethodModel.RewardPointsEnoughToPayForOrder ? new {@onclick = "PaymentMethod.toggleUseRewardPoints(this)"} : null)
+                @string.Format(T("Checkout.UseRewardPoints").Text, Model.CheckoutPaymentMethodModel.RewardPointsBalance, Model.CheckoutPaymentMethodModel.RewardPointsAmount)
+                @if (Model.CheckoutPaymentMethodModel.RewardPointsEnoughToPayForOrder)
+                {
+                    <script type="text/javascript">
+                        $(document).ready(function() {
+                            PaymentMethod.toggleUseRewardPoints($('#@Html.FieldIdFor(model => model.CheckoutPaymentMethodModel.UseRewardPoints)'));
+                        });
+                    </script>
+                }
+            </div>
+        }
+        @if (Model.CheckoutPaymentMethodModel.PaymentMethods.Count > 0)
+        {
+            <ul class="method-list" id="payment-method-block">
+                @for (int i = 0; i < Model.CheckoutPaymentMethodModel.PaymentMethods.Count; i++)
+                {
+                    var paymentMethod = Model.CheckoutPaymentMethodModel.PaymentMethods[i];
+                    var paymentMethodName = paymentMethod.Name;
+                    if (!String.IsNullOrEmpty(paymentMethod.Fee))
+                    {
+                        paymentMethodName = T("Checkout.SelectPaymentMethod.MethodAndFee", paymentMethodName, paymentMethod.Fee).Text;
+                    }
+                    <li>
+                        <div class="method-name">
+                            @if (!String.IsNullOrEmpty(paymentMethod.LogoUrl))
+                            {
+                                <div class ="payment-logo">
+                                    <label for="paymentmethod_@(i)">
+                                        <img src="@paymentMethod.LogoUrl" alt="@paymentMethodName" />
+                                    </label>
+                                </div>
+                            }
+                            <div class="payment-details">
+                                <input id="paymentmethod_@(i)" type="radio" name="paymentmethod" value="@(paymentMethod.PaymentMethodSystemName)" checked="@paymentMethod.Selected" />
+                                <label for="paymentmethod_@(i)">@paymentMethodName</label>
+                                @if (!string.IsNullOrEmpty(paymentMethod.Description))
+                                {
+                                    <div class="payment-description">@paymentMethod.Description</div>
+                                }
+                            </div>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <div class="message-error">
+                @T("Checkout.NoPaymentMethods")
+            </div>
+        }
+    </div>
+
+    <div class="section payment-info">
+        <div class="info">
+            @Html.Action(Model.CheckoutPaymentInfoModel.PaymentInfoActionName, Model.CheckoutPaymentInfoModel.PaymentInfoControllerName, Model.CheckoutPaymentInfoModel.PaymentInfoRouteValues)
+        </div>
+        @{
+            var validationSummary = Html.ValidationSummary(false);
+        }
+        @if (!MvcHtmlString.IsNullOrEmpty(validationSummary))
+        {
+            <div class="message-error">@validationSummary</div>
+        }
+    </div>
+    @Html.Widget("op_checkout_payment_method_bottom")
+</div>

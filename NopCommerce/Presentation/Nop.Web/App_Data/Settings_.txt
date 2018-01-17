@@ -1,0 +1,2 @@
+DataProvider: sqlserver
+DataConnectionString: Data Source=.\SQLEXPRESS;Initial Catalog=worldbuy;Integrated Security=False;User Id=sa;Password=123456;MultipleActiveResultSets=True

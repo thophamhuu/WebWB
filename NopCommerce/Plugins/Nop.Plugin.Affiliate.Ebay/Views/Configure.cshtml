@@ -1,0 +1,68 @@
+﻿@using Nop.Web.Framework;
+@model Nop.Plugin.Affiliate.Ebay.Models.ConfigurationModel
+@{
+    Layout = "_AdminLayout.cshtml";
+
+    //page title
+    ViewBag.Title = T("Plugin.Configuration.Settings.Ebay").Text;
+    //active menu item (system name)
+    Html.SetActiveMenuItemSystemName("Affiliate.Ebay.Setting");
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            @T("Plugin.Configuration.Settings.Ebay")
+        </h1>
+        <div class="pull-right">
+            <button type="submit" name="save" class="btn bg-blue">
+                <i class="fa fa-floppy-o"></i>
+                @T("Admin.Common.Save")
+            </button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="form-horizontal">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.NopLabelFor(model => model.DevID)
+                </div>
+                <div class="col-md-9">
+                    @Html.NopEditorFor(model => model.DevID)
+                    @Html.ValidationMessageFor(model => model.DevID)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.NopLabelFor(model => model.CertID)
+                </div>
+                <div class="col-md-9">
+                    @Html.NopEditorFor(model => model.CertID)
+                    @Html.ValidationMessageFor(model => model.CertID)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.NopLabelFor(model => model.AppID)
+                </div>
+                <div class="col-md-9">
+                    @Html.NopEditorFor(model => model.AppID)
+                    @Html.ValidationMessageFor(model => model.AppID)
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.NopLabelFor(model => model.Token)
+                </div>
+                <div class="col-md-9">
+                    @Html.NopEditorFor(model => model.Token)
+                    @Html.ValidationMessageFor(model => model.Token)
+                </div>
+            </div>
+        </div>
+    </div>
+}

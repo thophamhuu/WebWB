@@ -1,0 +1,154 @@
+﻿@using Nop.Core.Infrastructure;
+@using Nop.Plugin.Worldbuy.AnyBanner.Models
+@{
+    Layout = "~/Administration/Views/Shared/_AdminLayout.cshtml";
+    Html.SetActiveMenuItemSystemName("Nop.Plugin.Worldbuy.AnyBanner.List");
+    var widgetZones = ViewBag.WidgetZones as List<SelectListItem>;
+}
+@model IList<WB_AnyBannerModel>
+@{
+
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            @T("Nop.Plugin.Worldbuy.AnyBanner")
+        </h1>
+        <div class="pull-right">
+            <a href="@Url.Action("Create","AnyBanner",new { area="Admin"})" class="btn bg-green">
+                <i class="fa fa-plus"></i>
+                @T("Nop.Plugin.Worldbuy.Create")
+            </a>
+
+        </div>
+    </div>
+    <div class="content">
+        <div class="form-horizontal">
+
+            <div class="panel-group">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                    </div>
+                    <div class="panel-body">
+                        <div id="AnyBanners-grid">
+                            @if (Model != null)
+                            {
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>@T("Nop.Plugin.Worldbuy.AnyBanner.Name")</th>
+                                            <th>@T("Nop.Plugin.Worldbuy.AnyBanner.WidgetZone")</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Model)
+                                        {
+                                            <tr>
+                                                <td>@item.Name</td>
+                                                <td>@item.WidgetZone</td>
+                                                <td></td>
+                                            </tr>
+                                        }
+
+                                    </tbody>
+                                </table>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+         var widgetZones = [];
+        @if (widgetZones != null)
+        {
+            foreach(var zone in widgetZones)
+            {
+                @Html.Raw("widgetZones.push({\"value\":\"" + zone.Value + "\",\"text\":\"" + zone.Text + "\"});\n");
+            }
+        }
+        $(document).ready(function() {
+            $("#AnyBanners-grid").kendoGrid({
+                dataSource: {
+                    type: "json",
+                    transport: {
+                        read: {
+                            url: "@Html.Raw(Url.Action("ReadBanner", "AnyBanner"))",
+                            type: "POST",
+                            dataType: "json",
+                        },
+                        update: {
+                            url: "@Html.Raw(Url.Action("Edit", "AnyBanner"))",
+                            dataType: "json",
+                            type: "POST"
+                        },
+                        destroy: {
+                            url: "@Html.Raw(Url.Action("Delete", "AnyBanner"))",
+                            dataType: "json",
+                            type: "POST"
+                        }
+                    },
+                    schema: {
+                        model: {
+                            id:"Id",
+                            fields: {
+                                Id: { editable: false, nullable: true },
+                                Title: { type:"string"},
+                                WidgetZone: { field: "WidgetZone", type: "string" },
+                                IsActived: { type: "boolean" },
+                            }
+                        }
+                    },
+                    error: function (e) {
+                        display_kendoui_grid_error(e);
+                        // Cancel the changes
+                        this.cancelChanges();
+                    },
+                },
+                editable: {
+                    mode: "inline"
+                },
+                columns: [
+
+                    {
+                        field: "Name",
+                        title:"@T("Nop.Plugin.Worldbuy.AnyBanner.Name")"
+                    },
+                    {
+                        field: "WidgetZone",
+                        values: widgetZones,
+                        title:"@T("Nop.Plugin.Worldbuy.AnyBanner.WidgetZone")"
+                    },
+                   {
+                        template:renderIsActived,
+                        field: "IsActived",
+                        title:"@T("Nop.Plugin.Worldbuy.AnyBanner.IsActived")"
+                    },
+                    {
+                        command: [{
+                            text: "@T("Nop.Plugin.Worldbuy.view")",
+                            click: showDetails
+                        },"edit", "destroy"], title: "&nbsp;", width: "250px",
+                    }
+                ]});
+        });
+        function renderIsActived(e) {
+            var html = "";
+            if (e.IsActived) {
+                html += "<label class='label bg-green'>@T("Nop.Plugin.Worldbuy.Enabled")</label>";
+            }
+            else {
+                html += "<label class='label bg-red'>@T("Nop.Plugin.Worldbuy.Disabled")</label>";
+            }
+            return html;
+        }
+        function showDetails(e) {
+            e.preventDefault();
+
+            var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
+            console.log(dataItem);
+            window.location.href = "Edit/" + dataItem.Id;
+        }
+    </script>
+}

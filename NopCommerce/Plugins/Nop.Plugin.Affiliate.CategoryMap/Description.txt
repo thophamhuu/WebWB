@@ -1,0 +1,9 @@
+﻿Group: Affiliate
+FriendlyName: Affiliate CategoryMap
+SystemName: Affiliate.CategoryMap
+Version: 1.00
+SupportedVersions: 3.90
+Author: WorldBuy team
+DisplayOrder: 0
+FileName: Nop.Plugin.Affiliate.CategoryMap.dll
+Description: Affiliate Category Map

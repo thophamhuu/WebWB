@@ -1,0 +1,419 @@
+﻿@using Nop.Services.Stores
+@using Nop.Core.Infrastructure
+@model Nop.Admin.Models.Orders.OrderListModel
+
+@{
+    Layout = "~/Administration/Views/Shared/_AdminLayout.cshtml";
+    var defaultGridPageSize = EngineContext.Current.Resolve<Nop.Core.Domain.Common.AdminAreaSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<Nop.Core.Domain.Common.AdminAreaSettings>().GridPageSizes;
+    var stores = EngineContext.Current.Resolve<IStoreService>().GetAllStores();
+
+    //page title
+    ViewBag.Title = T("Admin.Orders").Text;
+    //active menu item (system name)
+    Html.SetActiveMenuItemSystemName("Order.Plugins.Amazon.List");
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            @T("Admin.Orders")
+        </h1>
+        <div class="pull-right">
+            <div class="btn-group">
+                <button type="button" class="btn btn-success">
+                    <i class="fa fa-download"></i>
+                    @T("Admin.Common.Export")
+                </button>
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                    <span class="caret"></span>
+                    <span class="sr-only">&nbsp;</span>
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                    <li>
+                        <button type="submit" name="exportxml-all">
+                            <i class="fa fa-file-code-o"></i>
+                            @T("Admin.Common.ExportToXml.All")
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button" id="exportxml-selected">
+                            <i class="fa fa-file-code-o"></i>
+                            @T("Admin.Common.ExportToXml.Selected")
+                        </button>
+                    </li>
+                    <li class="divider"></li>
+                    <li>
+                        <button type="submit" name="exportexcel-all">
+                            <i class="fa fa-file-excel-o"></i>
+                            @T("Admin.Common.ExportToExcel.All")
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button" id="exportexcel-selected">
+                            <i class="fa fa-file-excel-o"></i>
+                            @T("Admin.Common.ExportToExcel.Selected")
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn bg-purple">
+                    <i class="fa fa-file-pdf-o"></i>
+                    @T("Admin.Orders.PdfInvoices")
+                </button>
+                <button type="button" class="btn bg-purple dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                    <span class="caret"></span>
+                    <span class="sr-only">&nbsp;</span>
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                    <li>
+                        <button type="submit" name="pdf-invoice-all">
+                            @T("Admin.Orders.PdfInvoices.All")
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button" id="pdf-invoice-selected">
+                            @T("Admin.Orders.PdfInvoices.Selected")
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="form-horizontal">
+            <div class="panel-group">
+                <div class="panel panel-default panel-search">
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        @Html.NopLabelFor(model => model.StartDate)
+                                    </div>
+                                    <div class="col-md-8">
+                                        @Html.NopEditorFor(model => model.StartDate)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        @Html.NopLabelFor(model => model.EndDate)
+                                    </div>
+                                    <div class="col-md-8">
+                                        @Html.NopEditorFor(model => model.EndDate)
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-7 col-md-offset-5">
+                                <button type="button" id="search-orders" class="btn btn-primary btn-search">
+                                    <i class="fa fa-search"></i>
+                                    @T("Admin.Common.Search")
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <div id="orders-grid"></div>
+
+                        <script>
+                            $(document).ready(function() {
+                                $("#orders-grid").kendoGrid({
+                                    dataSource: {
+                                        type: "json",
+                                        transport: {
+                                            read: {
+                                                url: "@Html.Raw(Url.Action("OrderList", "OrderAmazon"))",
+                                                type: "POST",
+                                                dataType: "json",
+                                                data: additionalData
+                                            }
+                                        },
+                                        schema: {
+                                            data: "Data",
+                                            total: "Total",
+                                            errors: "Errors"
+                                        },
+                                        error: function(e) {
+                                            display_kendoui_grid_error(e);
+                                            // Cancel the changes
+                                            this.cancelChanges();
+                                        },
+                                        pageSize: @(defaultGridPageSize),
+                                        serverPaging: true,
+                                        serverFiltering: true,
+                                        serverSorting: true
+                                    },
+                                    pageable: {
+                                        refresh: true,
+                                        pageSizes: [@(gridPageSizes)],
+                                        @Html.Partial("_GridPagerMessages")
+                                    },
+                                    editable: {
+                                        confirmation: "@T("Admin.Common.DeleteConfirmation")",
+                                        mode: "inline"
+                                    },
+                                    scrollable: false,
+                                    dataBound: onDataBound,
+                                    columns: [
+                                        {
+                                            field: "Id",
+                                            headerTemplate: "<input id='mastercheckbox' type='checkbox'/>",
+                                            headerAttributes: { style: "text-align:center" },
+                                            attributes: { style: "text-align:center" },
+                                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                                            width: 50
+                                        }, {
+                                            field: "CustomOrderNumber",
+                                            title: "@T("Admin.Orders.Fields.CustomOrderNumber")",
+                                            width: 80
+                                        },
+                                        @if (!Model.IsLoggedInAsVendor)
+                                        {
+                                            //a vendor does not have access to this functionality
+                                            <text>{
+                                            field: "OrderStatus",
+                                            title: "@T("Admin.Orders.Fields.OrderStatus")",
+                                            width: 100,
+                                            template: '<span class="grid-report-item ' +
+                                                '# if(OrderStatusId == 10) {# yellow #} #' +
+                                                '# if(OrderStatusId == 20) {# blue #} #' +
+                                                '# if(OrderStatusId == 30) {# green #} #' +
+                                                '# if(OrderStatusId == 40) {# red #} #' +
+                                                '">#=OrderStatus#</span>'
+                                        },</text>
+                                        }
+                                        {
+                                            field: "PaymentStatus",
+                                            title: "@T("Admin.Orders.Fields.PaymentStatus")",
+                                            width: 150
+                                        },
+                                        @if (!Model.IsLoggedInAsVendor)
+                                        {
+                                            //a vendor does not have access to this functionality
+                                            <text>{
+                                            field: "ShippingStatus",
+                                            title: "@T("Admin.Orders.Fields.ShippingStatus")",
+                                            width: 150
+                                        },</text>
+                                        }
+                                        {
+                                            field: "CustomerEmail",
+                                            title: "@T("Admin.Orders.Fields.Customer")",
+                                            width: 250,
+                                            template: '#=CustomerFullName# (#=CustomerEmail#)'
+                                        },
+                                        {
+                                            field: "StoreName",
+                                            hidden: @(stores.Count > 1 ? "false" : "true"),
+                                            title: "@T("Admin.Orders.Fields.Store")",
+                                            width: 100
+                                        }, {
+                                            field: "CreatedOn",
+                                            title: "@T("Admin.Orders.Fields.CreatedOn")",
+                                            width: 150,
+                                            type: "date",
+                                            format: "{0:G}"
+                                        },
+                                        @if (!Model.IsLoggedInAsVendor)
+                                        {
+                                            //a vendor does not have access to this functionality
+                                            <text>{
+                                            field: "OrderTotal",
+                                            title: "@T("Admin.Orders.Fields.OrderTotal")",
+                                            width: 100,
+                                        },</text>
+                                        }
+                                        {
+                                            field: "Id",
+                                            title: "@T("Admin.Common.View")",
+                                            width: 50,
+                                            headerAttributes: { style: "text-align:center" },
+                                            attributes: { style: "text-align:center" },
+                                            template: '#=ButtonCart(HasCart,Id)#'
+                                        }
+                                    ]
+                                } );
+                            });
+                            function ButtonCart(hasCart, id) {
+                                console.log(hasCart);
+                                if (hasCart) {
+                                    return '<a class="btn btn-primary" href="Order?id='+id+'"><i class="fa fa-eye"></i>@T("Admin.Common.View")</a>';
+                                }
+                                else {
+                                    return '<a class="btn btn-warning" href="CartCreate?orderId='+id+'"><i class="fa fa-eye"></i>@T("Nop.Plugin.Order.Amazon.Create")</a>';
+                                }
+                            }
+                        </script>
+
+                        <script type="text/javascript">
+                            var selectedIds = [];
+                            var reportAggregates = "";
+
+                            $(document).ready(function () {
+                                //search button
+                                $('#search-orders').click(function () {
+                                    //search
+                                    var grid = $('#orders-grid').data('kendoGrid');
+                                    grid.dataSource.page(1); //new search. Set page size to 1
+                                    //grid.dataSource.read(); we already loaded the grid above using "page" function
+                                    //clear selected checkboxes
+                                    $('.checkboxGroups').attr('checked', false).change();
+                                    selectedIds = [];
+                                    return false;
+                                });
+
+                                $("".concat("#@Html.FieldIdFor(model => model.BillingEmail),",
+                                    "#@Html.FieldIdFor(model => model.BillingLastName),",
+                                    "#@Html.FieldIdFor(model => model.OrderNotes)")).keydown(function (event) {
+                                        if (event.keyCode === 13) {
+                                            $("#search-orders").click();
+                                            return false;
+                                        }
+                                    });
+
+                                $("#@Html.FieldIdFor(model => model.GoDirectlyToCustomOrderNumber)").keydown(function(event) {
+                                    if (event.keyCode === 13) {
+                                        $("#go-to-order-by-number").click();
+                                        return false;
+                                    }
+                                });
+
+                                $('#mastercheckbox').click(function () {
+                                    $('.checkboxGroups').attr('checked', $(this).is(':checked')).change();
+                                });
+
+                                //wire up checkboxes.
+                                $('#orders-grid').on('change', 'input[type=checkbox][id!=mastercheckbox][class=checkboxGroups]', function (e) {
+                                    var $check = $(this);
+                                    if ($check.is(":checked") == true) {
+                                        var checked = jQuery.inArray($check.val(), selectedIds);
+                                        if (checked == -1) {
+                                            //add id to selectedIds.
+                                            selectedIds.push($check.val());
+                                        }
+                                    }
+                                    else {
+                                        var checked = jQuery.inArray($check.val(), selectedIds);
+                                        if (checked > -1) {
+                                            //remove id from selectedIds.
+                                            selectedIds = $.grep(selectedIds, function (item, index) {
+                                                return item != $check.val();
+                                            });
+                                        }
+                                    }
+                                    updateMasterCheckbox();
+                                });
+                            });
+
+                            function additionalData() {
+                                var data = {
+                                    StartDate: $('#@Html.FieldIdFor(model => model.StartDate)').val(),
+                                    EndDate: $('#@Html.FieldIdFor(model => model.EndDate)').val(),
+                                    OrderStatusIds: $('#@Html.FieldIdFor(model => model.OrderStatusIds)').val(),
+                                    PaymentStatusIds: $('#@Html.FieldIdFor(model => model.PaymentStatusIds)').val(),
+                                    ShippingStatusIds: $('#@Html.FieldIdFor(model => model.ShippingStatusIds)').val(),
+                                    StoreId: $('#@Html.FieldIdFor(model => model.StoreId)').val(),
+                                    VendorId: $('#@Html.FieldIdFor(model => model.VendorId)').val(),
+                                    WarehouseId: $('#@Html.FieldIdFor(model => model.WarehouseId)').val(),
+                                    BillingEmail: $('#@Html.FieldIdFor(model => model.BillingEmail)').val(),
+                                    BillingLastName: $('#@Html.FieldIdFor(model => model.BillingLastName)').val(),
+                                    BillingCountryId: $('#@Html.FieldIdFor(model => model.BillingCountryId)').val(),
+                                    PaymentMethodSystemName: $('#@Html.FieldIdFor(model => model.PaymentMethodSystemName)').val(),
+                                    ProductId: $('#@Html.FieldIdFor(model => model.ProductId)').val(),
+                                    OrderNotes: $('#@Html.FieldIdFor(model => model.OrderNotes)').val()
+                                };
+                                addAntiForgeryToken(data);
+                                return data;
+                            }
+
+                            function onDataBound(e) {
+                                $('#orders-grid input[type=checkbox][id!=mastercheckbox][class=checkboxGroups]').each(function () {
+                                    var currentId = $(this).val();
+                                    var checked = jQuery.inArray(currentId, selectedIds);
+                                    //set checked based on if current checkbox's value is in selectedIds.
+                                    $(this).attr('checked', checked > -1);
+                                });
+
+                                updateMasterCheckbox();
+
+                            }
+
+                            function updateMasterCheckbox() {
+                                var numChkBoxes = $('#orders-grid input[type=checkbox][id!=mastercheckbox][class=checkboxGroups]').length;
+                                var numChkBoxesChecked = $('#orders-grid input[type=checkbox][id!=mastercheckbox][class=checkboxGroups]:checked').length;
+                                $('#mastercheckbox').attr('checked', numChkBoxes == numChkBoxesChecked && numChkBoxes > 0);
+                            }
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@*export selected (XML). We don't use GET approach because it's limited to 2K-4K chars and won't work for large number of entities*@
+@using (Html.BeginForm("ExportXmlSelected", "Order", FormMethod.Post, new { id = "export-xml-selected-form" }))
+{
+    @Html.AntiForgeryToken()
+    <input type="hidden" id="selectedIds" name="selectedIds" value="" />
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#exportxml-selected').click(function (e) {
+            e.preventDefault();
+            var ids = selectedIds.join(",");
+            $('#export-xml-selected-form #selectedIds').val(ids);
+            $('#export-xml-selected-form').submit();
+            return false;
+        });
+    });
+</script>
+
+@*export selected (Excel). We don't use GET approach because it's limited to 2K-4K chars and won't work for large number of entities*@
+@using (Html.BeginForm("ExportExcelSelected", "Order", FormMethod.Post, new { id = "export-excel-selected-form" }))
+{
+    @Html.AntiForgeryToken()
+    <input type="hidden" id="selectedIds" name="selectedIds" value="" />
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#exportexcel-selected').click(function (e) {
+            e.preventDefault();
+            var ids = selectedIds.join(",");
+            $('#export-excel-selected-form #selectedIds').val(ids);
+            $('#export-excel-selected-form').submit();
+            return false;
+        });
+    });
+</script>
+
+@*Print packaging slips selected (XML). We don't use GET approach because it's limited to 2K-4K chars and won't work for large number of entities*@
+@using (Html.BeginForm("PdfInvoiceSelected", "Order", FormMethod.Post, new { id = "pdf-invoice-selected-form" }))
+{
+    @Html.AntiForgeryToken()
+    <input type="hidden" id="selectedIds" name="selectedIds" value="" />
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#pdf-invoice-selected').click(function (e) {
+            e.preventDefault();
+            var ids = selectedIds.join(",");
+            $('#pdf-invoice-selected-form #selectedIds').val(ids);
+            $('#pdf-invoice-selected-form').submit();
+            return false;
+        });
+    });
+</script>

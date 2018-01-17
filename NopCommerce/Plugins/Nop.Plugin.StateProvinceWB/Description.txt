@@ -1,0 +1,9 @@
+﻿Group: WorldBuy
+FriendlyName: StateProvinceWB
+SystemName: StateProvinceWB
+Version: 1.00
+SupportedVersions: 3.90
+Author: World Buy
+DisplayOrder: 1
+FileName: Nop.Plugin.Worldbuy.StateProvinceWB.dll
+Description: Get All Province

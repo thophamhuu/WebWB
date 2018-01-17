@@ -1,0 +1,207 @@
+﻿@using Nop.Services.Stores;
+@using Nop.Web.Framework;
+@using Nop.Web.Framework.UI;
+@model Nop.Admin.Models.Orders.OrderListModel
+
+@{
+    Layout = "_AdminLayout.cshtml";
+
+    Html.AddCssFileParts("~/Plugins/Order.Ebay/Styles/sweetalert.css");
+    Html.AddScriptParts("~/Plugins/Order.Ebay/Scripts/sweetalert.min.js");
+
+    //page title
+    ViewBag.Title = T("Admin.Orders").Text;
+    //active menu item (system name)
+    Html.SetActiveMenuItemSystemName("Order.Ebay.ListOrder");
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="content">
+        <div class="form-horizontal">
+            <div class="panel-group">
+                <div class="panel panel-default panel-search">
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        @Html.NopLabelFor(model => model.StartDate)
+                                    </div>
+                                    <div class="col-md-8">
+                                        @Html.NopEditorFor(model => model.StartDate)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        @Html.NopLabelFor(model => model.EndDate)
+                                    </div>
+                                    <div class="col-md-8">
+                                        @Html.NopEditorFor(model => model.EndDate)
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="row">
+                                <div class="col-md-7 col-md-offset-5">
+                                    <button type="button" id="search-orders" class="btn btn-primary btn-search">
+                                        <i class="fa fa-search"></i>
+                                        @T("Admin.Common.Search")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <div id="orders-grid"></div>
+
+                            <script>
+                            $(document).ready(function() {
+                                $("#orders-grid").kendoGrid({
+                                    dataSource: {
+                                        type: "json",
+                                        transport: {
+                                            read: {
+                                                url: "@Html.Raw(Url.Action("ListOrder", "OrderEbay"))",
+                                                type: "POST",
+                                                dataType: "json",
+                                                data: additionalData
+                                            }
+                                        },
+                                        schema: {
+                                            data: "Data",
+                                            total: "Total",
+                                            errors: "Errors"
+                                        },
+                                        error: function(e) {
+                                            display_kendoui_grid_error(e);
+                                            // Cancel the changes
+                                            this.cancelChanges();
+                                        },
+                                        pageSize: 50,
+                                        serverPaging: true,
+                                        serverFiltering: true,
+                                        serverSorting: true
+                                    },
+                                    pageable: {
+                                        refresh: true,
+                                        pageSizes: [20, 50, 100, 200, 500],
+                                        @Html.Partial("_GridPagerMessages")
+                                    },
+                                    editable: {
+                                        confirmation: "@T("Admin.Common.DeleteConfirmation")",
+                                        mode: "inline"
+                                    },
+                                    scrollable: false,
+                                    columns: [
+                                        {
+                                            field: "CustomOrderNumber",
+                                            title: "@T("Admin.Orders.Fields.CustomOrderNumber")",
+                                            width: 80
+                                        },{
+                                            field: "OrderStatus",
+                                            title: "@T("Admin.Orders.Fields.OrderStatus")",
+                                            width: 100,
+                                            template: '<span class="grid-report-item ' +
+                                                '# if(OrderStatusId == 10) {# yellow #} #' +
+                                                '# if(OrderStatusId == 20) {# blue #} #' +
+                                                '# if(OrderStatusId == 30) {# green #} #' +
+                                                '# if(OrderStatusId == 40) {# red #} #' +
+                                                '">#=OrderStatus#</span>'
+                                        }, {
+                                            field: "PaymentStatus",
+                                            title: "@T("Admin.Orders.Fields.PaymentStatus")",
+                                            width: 150
+                                        }, {
+                                            field: "ShippingStatus",
+                                            title: "@T("Admin.Orders.Fields.ShippingStatus")",
+                                            width: 150
+                                        }, {
+                                            field: "CustomerEmail",
+                                            title: "@T("Admin.Orders.Fields.Customer")",
+                                            width: 250,
+                                            template: '#=CustomerFullName# (#=CustomerEmail#)'
+                                        }, {
+                                            field: "CreatedOn",
+                                            title: "@T("Admin.Orders.Fields.CreatedOn")",
+                                            width: 150,
+                                            type: "date",
+                                            format: "{0:G}"
+                                        },{
+                                            field: "OrderTotal",
+                                            title: "@T("Admin.Orders.Fields.OrderTotal")",
+                                            width: 100
+                                        }, {
+                                            title: "Order",
+                                            width: "30px",
+                                            command: [{
+                                                name: "Order",
+                                                text: "",
+                                                imageClass: "fa fa-check",
+                                                click: function (e) {
+                                                    e.preventDefault();
+                                                    var tr = $(e.target).closest("tr");
+                                                    var data = this.dataItem(tr);
+                                                    var postData = {
+                                                        id: data.Id
+                                                    };
+                                                    $.ajax({
+                                                        type: "POST",
+                                                        dataType: 'json',
+                                                        url: "@(Url.Action("OrderEbay", "OrderEbay", new RouteValueDictionary { { "Namespaces", "Nop.Plugin.Order.Ebay.Controllers" }, { "area", "" } }))",
+                                                        data: postData,
+                                                        success: function (data) {
+                                                            if (data.success == true) {
+                                                                //var grid = $('#grid').data('kendoGrid');
+                                                                //grid.dataSource.page(1);
+                                                                swal("Thành Công", data.message, "success");
+                                                            }
+                                                            else {
+                                                                swal("Lỗi", data.message, "error");
+                                                            }
+                                                        },
+                                                        error: function (xhr, ajaxOptions, thrownError) {
+                                                            swal("Lỗi", "Không tạo được order trên ebay", "error");
+                                                        }
+                                                    });
+                                                }
+                                            }]
+                                        }
+                                    ]
+                                } );
+                            });
+                            </script>
+
+                            <script type="text/javascript">
+                                $(document).ready(function () {
+                                    //search button
+                                    $('#search-orders').click(function () {
+                                        //search
+                                        var grid = $('#orders-grid').data('kendoGrid');
+                                        grid.dataSource.page(1); //new search. Set page size to 1
+                                        return false;
+                                    });
+
+                                });
+
+                                function additionalData() {
+                                    var data = {
+                                        StartDate: $('#@Html.FieldIdFor(model => model.StartDate)').val(),
+                                        EndDate: $('#@Html.FieldIdFor(model => model.EndDate)').val()
+                                    };
+                                    addAntiForgeryToken(data);
+                                    return data;
+                                }
+
+                            </script>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

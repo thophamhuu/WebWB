@@ -1,0 +1,27 @@
+﻿@using Nop.Web.Framework
+@using Nop.Plugin.Worldbuy.AnyBanner.Models
+@using Nop.Plugin.Worldbuy.Models
+@model IEnumerable<WB_AnyBannerModel>
+@if (Model != null)
+{
+    foreach (var banner in Model)
+    {
+        if (banner.Items != null)
+        {
+            <div class="worldbuy-anybanner worldbuy-row">
+                @foreach (var item in banner.Items)
+                {
+                    var column_1280 = banner.Settings.ColumnPerRow_1280!=0 ? "worldbuy-" + (((ColumnPerRow)banner.Settings.ColumnPerRow_1280).ToString().ToLower()) + "_1280" : "";
+                    var column_1000 = banner.Settings.ColumnPerRow_1000 != 0 ? "worldbuy-" + (((ColumnPerRow)banner.Settings.ColumnPerRow_1000).ToString().ToLower()) + "_1000" : "";
+                    var column_768 = banner.Settings.ColumnPerRow_768 != 0 ? "worldbuy-" + (((ColumnPerRow)banner.Settings.ColumnPerRow_768).ToString().ToLower()) + "_768" : "";
+                    var column_480 = banner.Settings.ColumnPerRow_480 != 0 ? "worldbuy-" + (((ColumnPerRow)banner.Settings.ColumnPerRow_480).ToString().ToLower()) + "_480" : "";
+                    <div class="worldbuy-anybanner-item @column_1280 @column_1000 @column_768 @column_480">
+                        <a href="@item.Url" title="@item.Title">
+                            <img src="@item.ImageUrl" alt="@item.Alt" />
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+    }
+}

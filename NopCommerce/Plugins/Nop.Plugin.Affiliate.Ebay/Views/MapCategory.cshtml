@@ -1,0 +1,115 @@
+﻿@model Nop.Plugin.Affiliate.Ebay.Models.CategoryEbayModel
+@using Nop.Web.Framework;
+@using Nop.Web.Framework.UI;
+@{
+    Layout = "_AdminLayout.cshtml";
+
+    //page title
+    ViewBag.Title = T("Plugin.Ebay.Configuration.Settings.MappingCategory").Text;
+    var categories = ViewBag.Categories as List<SelectListItem>;
+    //active menu item (system name)
+    Html.SetActiveMenuItemSystemName("Affiliate.Ebay.Mapping");
+}
+
+<div class="content">
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            @T("Plugin.Ebay.Configuration.Settings.MappingCategory")
+        </h1>
+    </div>
+    <div class="form-horizontal">
+        <div class="panel-group">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="grid">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+        var categories = [{'value':0,'text':'No map'}];
+        @if (categories != null)
+        {
+            foreach(var cate in categories)
+            {
+                @Html.Raw("categories.push({\"value\":" + cate.Value + ",\"text\":\"" + cate.Text + "\"});\n");
+            }
+        }
+        $(document).ready(function () {
+            $("#grid").kendoGrid({
+                dataSource: {
+                    type: "json",
+                    transport: {
+                        read: {
+                            url: "@Url.Action("ReadCategory", "AffiliateEbay")",
+                            type: "POST",
+                            dataType: "json"
+                        },
+                        update: {
+                            url:"@Url.Action("MappingCategory", "AffiliateEbay")",
+                            dataType: "json",
+                            type: "POST"
+                        },
+                        parameterMap: function (options, operation) {
+                            if (operation !== "read" && options.models) {
+                                return { models: kendo.stringify(options.models) };
+                            }
+                        }
+                    },
+                    schema: {
+                        data: "Data",
+                        total: "Total",
+                        errors: "Errors",
+                        model: {
+                            id: "Id",
+                            fields: {
+                                Id: { editable: false, nullable: true },
+                                Name: { editable: false, nullable: true },
+                                CategoryID: { field: "CategoryID", type: "number", defaultValue: 1 },
+                                CategoryMapID: { editable: false, nullable: true },
+                            }
+                        }
+                    },
+                    batch: true,
+                    pageSize: 50
+                },
+                groupable: false,
+                sortable: true,
+                filterable: {
+                    extra: false,
+                    operators: {
+                        string: {
+                            contains: "Kết quả chứa"
+                        }
+                    },
+                    messages: {
+                        info: "Chọn các mục tìm kiếm : ",
+                        clear: "Xóa",
+                        filter: "Tìm kiếm"
+                    }
+                },
+                pageable: {
+                    refresh: true,
+                    pageSizes: [20, 50, 100, 200, 500]
+                },
+                columns: [
+                   {
+                       field: "Name",
+                       title: "@T("Nop.Plugin.Affiliate.Amazon.Category.Name")",
+                       width: 200
+                   },
+                   {
+                       field: "CategoryID",
+                       width: "200px",
+                       values: categories,
+                       title: "Category"
+                   },
+                   { command: ["edit"], title: " ", width: "100px"},
+                ],
+                editable: "inline"
+            });
+        });
+</script>

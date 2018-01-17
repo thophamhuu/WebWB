@@ -1,0 +1,24 @@
+﻿@{
+    Layout = "~/Administration/Views/Shared/_AdminPopupLayout.cshtml";
+}
+@model Nop.Plugin.Shipping.RateByDistrict.Models.ShippingByProductTypeModel
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            @T("Admin.Common.AddNew")
+        </h1>
+        <div class="pull-right">
+            <input type="submit" name="save" class="btn bg-blue" value="@T("Admin.Common.Save")" />
+            <input type="submit" name="delete" class="btn bg-red" value="@T("Admin.Common.Delete")" />
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="form-horizontal">
+            @Html.Partial("~/Plugins/Shipping.RateByDistrict/Views/_CreateOrUpdateRateByProductType.cshtml", Model)
+        </div>
+    </div>
+}

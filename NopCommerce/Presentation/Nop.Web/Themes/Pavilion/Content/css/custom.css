@@ -1,0 +1,16 @@
+﻿.header-logo a img {
+    background-color: transparent;
+}
+
+.header-lower {
+    background-color: #eb250b;
+}
+
+#flyout-cart {
+    float: right;
+    padding-top: 10px;
+}
+
+.footer-upper {
+    background-color: #eb250b;
+}

@@ -1,0 +1,175 @@
+﻿@using Nop.Web.Framework;
+@{
+    Layout = "";
+    Html.SetActiveMenuItemSystemName("Affiliate.Plugins.Amazon.Configure");
+}
+@model Nop.Plugin.Affiliate.Amazon.Models.ConfigurationModel
+
+@Html.Action("StoreScopeConfiguration", "Setting", new { area = "Admin" })
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="col-md-4">
+                    <div class="row">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.NopLabelFor(model => model.Service)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.NopEditorFor(model => model.Service)
+                                @Html.ValidationMessageFor(model => model.Service)
+                            </div>
+                        </div>
+                        @*<div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.NopLabelFor(model => model.AssociateTag)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.NopEditorFor(model => model.AssociateTag)
+                                    @Html.ValidationMessageFor(model => model.AssociateTag)
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.NopLabelFor(model => model.AWSAccessKeyID)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.NopEditorFor(model => model.AWSAccessKeyID)
+                                    @Html.ValidationMessageFor(model => model.AWSAccessKeyID)
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.NopLabelFor(model => model.AWSSecretKey)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.NopEditorFor(model => model.AWSSecretKey)
+                                    @Html.ValidationMessageFor(model => model.AWSSecretKey)
+                                </div>
+                            </div>*@
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.NopLabelFor(model => model.Endpoint)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.NopEditorFor(model => model.Endpoint)
+                                @Html.ValidationMessageFor(model => model.Endpoint)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.NopLabelFor(model => model.Version)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.NopEditorFor(model => model.Version)
+                                @Html.ValidationMessageFor(model => model.Version)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.NopLabelFor(model => model.Durations)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.NopEditorFor(model => model.Durations)
+                                @Html.ValidationMessageFor(model => model.Durations)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                &nbsp;
+                            </div>
+                            <div class="col-md-9">
+                                <input type="submit" name="save" class="btn bg-blue" value="@T("Admin.Common.Save")" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div id="accounts-grid">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function () {
+            $("#accounts-grid").kendoGrid({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: "@Url.Action("Accounts","AffiliateAmazon")",
+                            dataType: "json",
+                            type: "POST"
+                        },
+                        create: {
+                            url: "@Url.Action("CreateAccount","AffiliateAmazon")",
+                            dataType: "json",
+                            type: "POST"
+                        },
+                        update: {
+                            url: "@Url.Action("UpdateAccount","AffiliateAmazon")",
+                            dataType: "json",
+                            type: "POST"
+                        },
+                        destroy: {
+                            url: "@Url.Action("DeleteAccount", "AffiliateAmazon")",
+                            dataType: "json",
+                            type: "POST"
+                        },
+                    },
+                    schema: {
+                        model: {
+                            id: "Id",
+                            fields: {
+                                AssociateTag: { field: "AssociateTag" },
+                                AccessKeyID: { field: "AccessKeyID" },
+                                SecretKey: { field: "SecretKey" },
+                                IsActive: { field: "IsActive", type: "boolean" },
+                                //CategoryMapID: { editable: false, type: "number", nullable: true },
+                            }
+                        }
+                    },
+                },
+                sortable: false,
+                pageable: false,
+                filterable: false,
+                toolbar: ["create"],
+                editable: "inline",
+                columns: [
+                     {
+                         field: "Id",
+                         title: "@T("Nop.Plugin.Affiliate.Amazon.Id")",
+                    width: 100
+        },
+                   {
+                       field: "AssociateTag",
+                       title: "@T("Nop.Plugin.Affiliate.Amazon.AssociateTag")",
+                       width: 100
+                   },
+                {
+                    field: "AccessKeyID",
+                    title: "@T("Nop.Plugin.Affiliate.Amazon.AWSAccessKeyID")",
+                    width: 150
+                },
+                {
+                    field: "SecretKey",
+                    title: "@T("Nop.Plugin.Affiliate.Amazon.AWSSecretKey")",
+                    width: 200
+                },
+                 {
+                     field: "IsActive",
+                     title: "@T("Nop.Plugin.Affiliate.Amazon.IsActive")",
+                     width: 200
+                 },
+                { command: ["edit","destroy"], title: " ", width: "100px" },
+                ],
+            });
+        });
+    </script>
+}

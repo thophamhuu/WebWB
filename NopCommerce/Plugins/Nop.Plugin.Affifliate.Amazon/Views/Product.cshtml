@@ -1,0 +1,277 @@
+﻿@using Nop.Web.Framework;
+@using Nop.Core.Infrastructure;
+@{
+    Layout = "~/Administration/Views/Shared/_AdminLayout.cshtml";
+    var defaultGridPageSize = EngineContext.Current.Resolve<Nop.Core.Domain.Common.AdminAreaSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<Nop.Core.Domain.Common.AdminAreaSettings>().GridPageSizes;
+    Html.SetActiveMenuItemSystemName("Affiliate.Plugins.Amazon.Product");
+}
+@model Nop.Plugin.Affiliate.Amazon.Models.ProductParameter
+@{
+
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            @T("Nop.Plugin.Affiliate.Amazon.Product")
+        </h1>
+    </div>
+    <div class="content">
+        <div class="form-horizontal">
+
+            <div class="panel-group">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <div id="product-sync">
+                            @using (Ajax.BeginForm("SyncProducts", "AffiliateAmazon", null, new AjaxOptions { OnBegin = "OnBegin", OnSuccess = "OnSuccess", OnFailure = "OnFailure" }, new { enctype = "multipart/form-data" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.NopLabelFor(model => model.Keywords)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.NopEditorFor(model => model.Keywords)
+                                        @Html.ValidationMessageFor(model => model.Keywords)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.NopLabelFor(model => model.CategoryID)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.NopDropDownListFor(model => model.CategoryID, Model.Categories, new { @class = "select2" })
+                                        @Html.ValidationMessageFor(model => model.CategoryID)
+                                    </div>
+                                </div>
+
+                                @*<div class="form-group">
+                                        <div class="col-md-3">
+                                            @Html.NopLabelFor(model => model.Properties)
+                                        </div>
+                                        <div class="col-md-9">
+                                            @Html.NopDropDownListFor(model => model.Properties, Model.SyncPropertyList, new { @class = "select2", multiple = "" })
+                                            @Html.ValidationMessageFor(model => model.Properties)
+                                        </div>
+                                    </div>*@
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        &nbsp;
+                                    </div>
+                                    <div class="col-md-9">
+                                        <input type="submit" id="sync" name="sync" class="btn bg-green" value="@T("Nop.Plugin.Affiliate.Amazon.Sync")" />
+                                        @*<input type="submit" id="update" name="update" class="btn bg-olive" value="@T("Nop.Plugin.Affiliate.Amazon.Update")" />*@
+                                        <input type="button" id="search" name="search" class="btn bg-blue" value="@T("Nop.Plugin.Affiliate.Amazon.Search")" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+
+                                    </div>
+                                    <div class="col-md-9">
+                                        <ul id="browseNodes" style="padding:0;margin:0;"></ul>
+                                    </div>
+                                </div>
+
+                            }
+                        </div>
+                        <div id="product-grid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<link href="~/Plugins/Affiliate.Amazon/Scripts/select2/css/select2.min.css" rel="stylesheet" />
+<script src="~/Plugins/Affiliate.Amazon/Scripts/select2/js/select2.min.js"></script>
+<script src="~/Plugins/Affiliate.Amazon/Scripts/jquery.unobtrusive-ajax.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $(".select2").select2();
+            $("#product-grid").kendoGrid({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: "@Url.Action("SyncProducts","AffiliateAmazon")",
+                            dataType: "json",
+                            type: "POST",
+                            data: additionalData
+                        },
+                    },
+                    schema: {
+                        data:"data",
+                        total: "totalCount"
+                    },
+                    pageSize: @defaultGridPageSize,
+                    serverPaging: true,
+                    sort: { field: 'Name', dir: 'asc' },
+                },
+                sortable: true,
+                pageable: {
+                    refresh: true,
+                    pageSizes: [@(gridPageSizes)],
+                                },
+                filterable: {
+                    extra: false,
+                    mode: "row",
+                    operators: {
+                        string: {
+                            contains:"Contains"
+                        }
+                    }
+                },
+                columns: [
+                    {
+                        template: "<img src='#:data.Image#' width=50/>",
+                        field: "Image",
+                        title: "Image",
+                        width: 75,
+                        filterable: false
+                    },
+                {
+                       field: "ASIN",
+                       title: "@T("Nop.Plugin.Affiliate.Amazon.Category.ASIN")",
+                       filterable: {
+                           cell: {
+                               operator: "contains",
+                               suggestionOperator: "contains"
+                           }
+                       },
+                    },
+                   {
+                       field: "Name",
+                       title: "@T("Nop.Plugin.Affiliate.Amazon.Category.Name")",
+                       filterable: {
+                           cell: {
+                               operator: "contains",
+                               suggestionOperator: "contains"
+                           }
+                       },
+                    },{
+                       field: "Price",
+                       title: "@T("Nop.Plugin.Affiliate.Amazon.Category.Price")",
+                       width: 150,
+                       filterable: false
+                    },
+                    {
+                       field: "PriceSource",
+                       title: "@T("Nop.Plugin.Affiliate.Amazon.Category.PriceSource")",
+                       width: 150,
+                       filterable: false
+                    },
+                   {
+                       template: "<button class='btn bg-olive' onclick='sync(#:data.Id#)'><i class='fa fa-refresh'></i>Sync</button>"
+                       + "<a target='_blank' class='btn bg-blue' href='/Admin/Product/Edit/#:data.ProductId#'><i class='fa fa-edit'></i>Edit</a>"
+                       +"<a class='btn bg-yellow' target='_blank' href='#:data.DetailUrl#' width=50><i class='fa fa-link'></i>Link</a>",
+                       title: "Source",
+                       width: 250,
+                       filterable: false
+                   }
+                ]
+         });
+    });
+    function sync(Id) {
+
+        $.ajax({
+            type: 'GET',
+            url: "@Url.Action("SyncProduct")",
+            data: { id: Id },
+            dataType: "html",
+            success: function (data) {
+                $("#sync-window .form-horizontal").html(data);
+                $("#sync-window").modal("show");
+            }
+        });
+    }
+    function additionalData() {
+        var categoryId = $("#CategoryID").val();
+        var keywords = $("#Keywords").val();
+        var data = {
+                                    Keywords:keywords,
+                                    CategoryID: categoryId,
+                                    search:"Search"
+                                };
+                                addAntiForgeryToken(data);
+                                return data;
+                            }
+    $(document).ready(function () {
+        var val = $("#CategoryID").val();
+        categoryId = val;
+        LoadBrowseNode();
+        var grid = $('#product-grid').data('kendoGrid');
+        $("#CategoryID").change(function () {
+            var val = $(this).val();
+            categoryId = val;
+            LoadBrowseNode();
+            return false;
+        });
+        $("#search").on("click", function () {
+            ReloadGrid();
+        });
+    })
+    function ReloadGrid() {
+        var grid = $('#product-grid').data('kendoGrid');
+        grid.refresh();
+        grid.pager.page(1);
+    }
+    function LoadBrowseNode() {
+        $.ajax({
+                type: 'get',
+                url:'@Url.Action("LoadBrowseNode", "AffiliateAmazon")',
+                dataType: 'json',
+                data: { categoryId: categoryId },
+                success: function (data) {
+                    if (data !== null && data.length > 0) {
+                        var html = "";
+                        $.each(data, function (ind, val) {
+                            var li = "<li class='label label-success' style='display:block;float:left;margin-right:5px'>";
+
+                            li += val.BrowseNodeID + " - " + val.Name;
+
+                            li += "</li>";
+                            html += li;
+                        });
+                        $("#browseNodes").html(html);
+                        $(':input#sync').attr('disabled', false);
+                    }
+                    else {
+                        $("#browseNodes").html("");
+                        $(':input#sync').attr('disabled', true);
+                    }
+                }
+        })
+    }
+
+    function OnBegin() {
+        $("#bg").show();
+    }
+    function OnSuccess(result) {
+        if (result.Status!==undefined && result.Status) {
+            ReloadGrid();
+        }
+
+        $("#bg").hide();
+    }
+
+    function OnFailure() {
+        $("#bg").hide();
+    }
+</script>
+<script>
+
+</script>
+<div id="bg" style="display:none;position:fixed;height:100%;width:100%;z-index:10000;background:rgba(0,0,0,.8);top:0;left:0;">
+    <span style="font-size:50px;background:#ddd;color:#333; padding:10px; position:absolute;top:50%;left:50%;display:block;margin-top:-45px;margin-left:-140px"><i class="fa fa-spin fa-spinner"></i> Syncing...</span>
+</div>
+
+<div id="sync-window" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="importexcel-window-title">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="sync-window-title">@T("Admin.Common.ImportFromExcel")</h4>
+            </div>
+            <div class="form-horizontal">
+
+            </div>
+        </div>
+    </div>
+</div>

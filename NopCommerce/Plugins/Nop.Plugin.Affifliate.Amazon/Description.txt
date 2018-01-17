@@ -1,0 +1,9 @@
+﻿Group: Affiliate
+FriendlyName: Affiliate Amazon
+SystemName: Affiliate.Amazon
+Version: 1.00
+SupportedVersions: 3.90
+Author: WorldBuy team
+DisplayOrder: 5
+FileName: Nop.Plugin.Affiliate.Amazon.dll
+Description: Affiliate Amazon Api

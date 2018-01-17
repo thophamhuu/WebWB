@@ -1,0 +1,9 @@
+﻿Group: Shipping rate computation
+FriendlyName: Manual (Rate By District)
+SystemName: Shipping.RateByDistrict
+Version: 1.02
+SupportedVersions: 3.90
+Author: Worldbuy team
+DisplayOrder: 1
+FileName: Nop.Plugin.Shipping.RateByDistrict.dll
+Description: This plugin offers shipping rates with calculated by dictrict

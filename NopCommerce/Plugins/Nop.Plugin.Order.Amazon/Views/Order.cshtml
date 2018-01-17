@@ -1,0 +1,94 @@
+﻿@using Nop.Services.Stores
+@using Nop.Core.Infrastructure
+@using Nop.Web.Framework.Events;
+@using Nop.Services.Events
+@model Nop.Plugin.Order.Amazon.Models.OrderModel
+
+@{
+    //page title
+    Layout = "~/Administration/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = T("Admin.Orders.EditOrderDetails").Text;
+    //active menu item (system name)
+    Html.SetActiveMenuItemSystemName("Order.Plugins.Amazon.Order");
+}
+
+@using (Html.BeginForm(null, null, FormMethod.Post, new { id = "order-form" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            @T("Admin.Orders.EditOrderDetails") - @Model.CustomOrderNumber
+            <small><i class="fa fa-arrow-circle-left"></i>@Html.ActionLink(T("Admin.Orders.BackToList").Text, "List")</small>
+        </h1>
+    </div>
+
+    @Html.ValidationSummary(false)
+
+    <script>
+        $(document).ready(function () {
+            bindBootstrapTabSelectEvent('order-edit');
+        });
+    </script>
+
+    <div class="content">
+        @if (Model.Warnings.Count > 0)
+        {
+            <div class="callout callout-danger">
+                <ul>
+                    @foreach (var warning in Model.Warnings)
+                    {
+                        <li>@warning</li>
+                    }
+                </ul>
+            </div>
+        }
+        <div class="form-horizontal">
+            <div id="order-edit" class="nav-tabs-custom">
+                <ul class="nav nav-tabs">
+                    @Html.RenderBootstrapTabHeader("tab-info", @T("Admin.Orders.Info"), true)
+                    @Html.RenderBootstrapTabHeader("tab-billing-info", @T("Admin.Orders.BillingInfo"))
+                    @Html.RenderBootstrapTabHeader("tab-shipping-info", @T("Admin.Orders.ShippingInfo"))
+                    @Html.RenderBootstrapTabHeader("tab-products", @T("Admin.Orders.Products"))
+                </ul>
+                <div class="tab-content">
+                    @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                    @Html.RenderBootstrapTabContent("tab-billing-info", @TabBillingInfo())
+                    @Html.RenderBootstrapTabContent("tab-shipping-info", @TabShippingInfo())
+                    @Html.RenderBootstrapTabContent("tab-products", @TabProducts())
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {
+        //custom tabs
+        var eventMessage = new AdminTabStripCreated(this.Html, "order-edit");
+        EngineContext.Current.Resolve<IEventPublisher>
+            ().Publish(eventMessage);
+        foreach (var eventBlock in eventMessage.BlocksToRender)
+        {
+            @eventBlock
+        }
+    }
+
+    @*save selected tab name*@
+    <input type="hidden" id="selected-tab-name" name="selected-tab-name" value="@(Html.GetSelectedTabName())">
+}
+@Html.DeleteConfirmation("order-delete")
+
+@helper TabInfo()
+{
+    @Html.Partial("~/Plugins/Order.Amazon/Views/_OrderDetails.Info.cshtml", Model)
+}
+@helper TabBillingInfo()
+{
+    @Html.Partial("~/Plugins/Order.Amazon/Views/_OrderDetails.Billing.cshtml", Model)
+}
+@helper TabShippingInfo()
+{
+    @Html.Partial("~/Plugins/Order.Amazon/Views/_OrderDetails.Shipping.cshtml", Model)
+}
+@helper TabProducts()
+{
+    @Html.Partial("~/Plugins/Order.Amazon/Views/_OrderDetails.Products.cshtml", Model)
+}

@@ -1,0 +1,9 @@
+﻿Group: Order
+FriendlyName: Order Ebay
+SystemName: Order.Ebay
+Version: 1.00
+SupportedVersions: 3.90
+Author: WorldBuy team
+DisplayOrder: 5
+FileName: Nop.Plugin.Order.Ebay.dll
+Description: Order Ebay Api

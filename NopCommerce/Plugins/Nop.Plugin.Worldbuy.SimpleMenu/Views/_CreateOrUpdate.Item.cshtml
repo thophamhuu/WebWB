@@ -1,0 +1,81 @@
+﻿@using Nop.Services.Stores
+@using Nop.Core.Infrastructure
+@using Nop.Web.Framework
+@using Nop.Web.Framework.Events
+@using Nop.Services.Events
+@using Nop.Plugin.Worldbuy.SimpleMenu.Models
+@model WB_SimpleMenuItemModel
+<form id="itemForm" method="post" enctype="multipart/form-data">
+    @Html.HiddenFor(model => model.MenuID)
+    @Html.HiddenFor(model => model.Id)
+
+    @(Html.LocalizedEditor<WB_SimpleMenuItemModel, WB_SimpleMenuItemLocalizedModel>("product-info-localized",
+    @<div>
+        <div class="form-group">
+            <div class="col-md-3">
+                @Html.NopLabelFor(model => model.Locales[item].Title)
+            </div>
+            <div class="col-md-9">
+                @Html.NopEditorFor(model => model.Locales[item].Title)
+                @Html.ValidationMessageFor(model => model.Locales[item].Title)
+            </div>
+        </div>
+        @Html.HiddenFor(model => model.Locales[item].LanguageId)
+    </div>
+                            ,@<div>
+        <div class="form-group">
+            <div class="col-md-3">
+                @Html.NopLabelFor(model => model.Title)
+            </div>
+            <div class="col-md-9">
+                @Html.NopEditorFor(model => model.Title, required: true)
+                @Html.ValidationMessageFor(model => model.Title)
+            </div>
+        </div>
+    </div>
+    ))
+    <div class="form-group">
+        <div class="col-md-3">
+            @Html.NopLabelFor(model => model.Url)
+        </div>
+        <div class="col-md-4">
+            @Html.NopEditorFor(model => model.Url, required: true)
+            @Html.ValidationMessageFor(model => model.Url)
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-3">
+            @Html.NopLabelFor(model => model.Order)
+        </div>
+        <div class="col-md-4">
+            @Html.NopEditorFor(model => model.Order)
+            @Html.ValidationMessageFor(model => model.Order)
+        </div>
+    </div>
+    @if (Model.Id == 0)
+    {
+        <div class="form-group">
+            <div class="col-md-3">
+                <div class="label-wrapper"><label class="control-label" for="Title" title="">@T("Nop.Plugin.Worldbuy.SimpleMenu.Item.IconImageUrl")</label></div>
+            </div>
+            <div class="col-md-4">
+                <input name="file" type="file" class="form-control" />
+            </div>
+        </div>
+    }
+    
+    
+    <div class="form-group">
+        <div class="col-md-3">
+
+        </div>
+        <div class="col-md-4">
+            <button type="button" id="updateItem" class="btn bg-blue">@T("nop.plugin.worldbuy.save")</button>
+        </div>
+    </div>
+</form>
+
+
+
+
+

@@ -1,0 +1,26 @@
+﻿.worldbuy-simplemenu-item a {
+    padding: 0 10px;
+    color: #fff;
+    position: relative;
+}
+
+    .worldbuy-simplemenu-item a span {
+        /*display: inline-block;
+        height: 42px;
+        width: 20px;
+        background-repeat: no-repeat;
+        background-position: right center;
+        margin-right: 10px;
+        float: left;*/
+        float: left;
+        position: relative;
+        text-align: center;
+    }
+
+        .worldbuy-simplemenu-item a span.rtl {
+            float: right;
+        }
+
+        .worldbuy-simplemenu-item a span img {
+            vertical-align: middle;
+        }

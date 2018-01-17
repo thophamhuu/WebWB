@@ -1,0 +1,92 @@
+﻿@using Nop.Services.Stores;
+@using Nop.Core.Infrastructure;
+@using Nop.Web.Framework.Events;
+@using Nop.Services.Events
+@{
+    Layout = "";
+}
+
+@model Nop.Plugin.Tax.Worldbuy.FixedOrByCountryStateZip.Models.ConfigurationModel
+
+<script>
+    $(document).ready(function () {
+        bindBootstrapTabSelectEvent('tax-configure');
+    });
+</script>
+<div id="tax-configure" class="nav-tabs-custom">
+    <ul class="nav nav-tabs">
+        @Html.RenderBootstrapTabHeader("tab-fixed", @T("Plugins.Tax.Worldbuy.FixedOrByCountryStateZip.Fixed"), true)
+        @Html.RenderBootstrapTabHeader("tab-taxbycountrystatezip", @T("Plugins.Tax.Worldbuy.FixedOrByCountryStateZip.TaxByCountryStateZip"))
+        @Html.RenderBootstrapTabHeader("tab-shipping-taxcategorymapping", @T("Plugins.Tax.Worldbuy.FixedOrByCountryStateZip.TaxCategoryMapping"))
+
+    </ul>
+    <div class="tab-content">
+        @Html.RenderBootstrapTabContent("tab-fixed", @Fixed(), true)
+        @Html.RenderBootstrapTabContent("tab-taxbycountrystatezip", @TaxByCountryStateZip())
+        @Html.RenderBootstrapTabContent("tab-shipping-taxcategorymapping", @TaxCategoryMapping())
+    </div>
+</div>
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "tax-configur");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+@helper Fixed()
+{
+    @Html.Partial("~/Plugins/Tax.Worldbuy.FixedOrByCountryStateZip/Views/_FixedRate.cshtml")
+}
+@helper TaxByCountryStateZip()
+{
+    @Html.Partial("~/Plugins/Tax.Worldbuy.FixedOrByCountryStateZip/Views/_CountryStateZip.cshtml", Model)
+}
+@helper TaxCategoryMapping()
+    {
+    @Html.Partial("~/Plugins/Tax.Worldbuy.FixedOrByCountryStateZip/Views/_TaxCategoryMapping.cshtml", Model)
+}
+@*<div class="form-group">
+        <div class="col-md-12">
+            <div class="onoffswitch">
+                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="advanced-settings-mode" checked="@Model.CountryStateZipEnabled">
+                <label class="onoffswitch-label" for="advanced-settings-mode">
+                    <span class="onoffswitch-inner"
+                          data-locale-basic="@T("Plugins.Tax.Worldbuy.FixedOrByCountryStateZip.Fixed")"
+                          data-locale-advanced="@T("Plugins.Tax.Worldbuy.FixedOrByCountryStateZip.TaxByCountryStateZip")"></span>
+                    <span class="onoffswitch-switch"></span>
+                </label>
+            </div>
+        </div>
+    </div>*@
+@*<script type="text/javascript">
+                function checkAdvancedSettingsMode(advanced) {
+                    if (advanced) {
+                        $("body").addClass("advanced-settings-mode");
+                        $("body").removeClass("basic-settings-mode");
+                    } else {
+                        $("body").removeClass("advanced-settings-mode");
+                        $("body").addClass("basic-settings-mode");
+                    }
+                }
+                checkAdvancedSettingsMode($("#advanced-settings-mode").is(':checked'));
+                $(document).ready(function() {
+                    $("#advanced-settings-mode").click(function() {
+                        checkAdvancedSettingsMode($(this).is(':checked'));
+                        $.ajax({
+                            cache: false,
+                            url: '@Url.Action("SaveMode", "WB_FixedOrByCountryStateZip")',
+                            type: 'post',
+                            data: {value: $(this).is(':checked')},
+                            dataType: 'json',
+                            error: function(xhr, ajaxOptions, thrownError) {
+                                alert('Failed to save preferences.');
+                            }
+                        });
+                    });
+                });
+    </script>*@
+
+
+

@@ -1,0 +1,147 @@
+﻿@using Nop.Services.Stores
+@using Nop.Core.Infrastructure
+@using Nop.Web.Framework.Events
+@using Nop.Services.Events
+@using Nop.Plugin.Worldbuy.SimpleMenu.Models
+@{
+    Layout = "~/Administration/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = @T("Nop.Plugin.Worldbuy.SimpleMenu.List").Text;
+    Html.SetActiveMenuItemSystemName("Worldbuy.SimpleMenu.List");
+}
+@model IList<WB_SimpleMenuModel>
+@{
+
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            @T("Nop.Plugin.Worldbuy.SimpleMenu")
+        </h1>
+        <div class="pull-right">
+            <a href="@Url.Action("Create","SimpleMenu",new { area="Admin"})" class="btn bg-green">
+                <i class="fa fa-plus"></i>
+                @T("Nop.Plugin.Worldbuy.Create")
+            </a>
+
+        </div>
+    </div>
+    <div class="content">
+        <div class="form-horizontal">
+
+            <div class="panel-group">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                    </div>
+                    <div class="panel-body">
+                        <div id="simpleMenus-grid">
+                            @if (Model != null)
+                            {
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>@T("Nop.Plugin.Worldbuy.SimpleMenu.Name")</th>
+                                            <th>@T("Nop.Plugin.Worldbuy.SimpleMenu.WidgetZone")</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Model)
+                                        {
+                                            <tr>
+                                                <td>@item.Name</td>
+                                                <td>@item.WidgetZone</td>
+                                                <td></td>
+                                            </tr>
+                                        }
+
+                                    </tbody>
+                                </table>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $("#simpleMenus-grid").kendoGrid({
+                dataSource: {
+                    type: "json",
+                    transport: {
+                        read: {
+                            url: "@Html.Raw(Url.Action("ReadMenu", "SimpleMenu"))",
+                            type: "POST",
+                            dataType: "json",
+                        },
+                        update: {
+                            url: "@Html.Raw(Url.Action("Edit", "SimpleMenu"))",
+                            type: "POST",
+                            dataType: "json",
+                        },
+                        destroy: {
+                            url: "@Html.Raw(Url.Action("Delete", "SimpleMenu"))",
+                            dataType: "json",
+                            type: "POST"
+                        }
+                    },
+                    schema: {
+                        model: {
+                            id:"Id",
+                            fields: {
+                                Id: { editable: false, nullable: true },
+                                Title: {type:"string" },
+                                WidgetZone: { editable: false, nullable: true },
+                                IsActived: { type:"boolean" },
+                            }
+                        }
+                    },
+                    error: function (e) {
+                        display_kendoui_grid_error(e);
+                        // Cancel the changes
+                        this.cancelChanges();
+                    },
+                },
+                editable: {
+                    mode: "inline"
+                },
+                columns: [
+
+                    {
+                        field: "Name",
+                        title:"@T("Nop.Plugin.Worldbuy.SimpleMenu.Name")"
+                    },
+                    {
+                        field: "WidgetZone",
+                        title:"@T("Nop.Plugin.Worldbuy.SimpleMenu.WidgetZone")"
+                    },
+                    {
+                        template:renderIsActived,
+                        field: "IsActived",
+                        title:"@T("Nop.Plugin.Worldbuy.SimpleMenu.IsActived")"
+                    },
+                    {
+                        command: [{
+                            text: "@T("nop.plugin.worldbuy.view")",
+                            click: showDetails
+                        },"edit", "destroy"], title: "&nbsp;", width: "250px",
+                    }
+                ]});
+        });
+        function renderIsActived(e) {
+            var html = "";
+            if (e.IsActived) {
+                html += "<label class='label bg-green'>@T("nop.plugin.worldbuy.enabled")</label>";
+            }
+            else {
+                html += "<label class='label bg-red'>@T("nop.plugin.worldbuy.disabled")</label>";
+            }
+            return html;
+        }
+        function showDetails(e) {
+            e.preventDefault();
+
+            var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
+            window.location.href = "Edit/" + dataItem.Id;
+        }
+    </script>
+}

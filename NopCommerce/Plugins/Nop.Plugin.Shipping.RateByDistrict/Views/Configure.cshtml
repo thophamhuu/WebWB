@@ -1,0 +1,71 @@
+﻿@{
+    Layout = "";
+}
+@model Nop.Plugin.Shipping.RateByDistrict.Models.ConfigurationModel
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="onoffswitch">
+            <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="advanced-settings-mode" checked="@Model.ShippingByDistrictEnabled">
+            <label class="onoffswitch-label" for="advanced-settings-mode">
+                <span class="onoffswitch-inner"
+                      data-locale-basic="@T("Plugins.Shipping.RateByDistrict.Fixed")"
+                      data-locale-advanced="@T("Plugins.Shipping.RateByDistrict.ShippingByDistrict")"></span>
+                <span class="onoffswitch-switch"></span>
+            </label>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="pull-right">
+            <a href="@Url.Action("Methods", "Shipping", new {area = "Admin"})" class="btn bg-blue">
+                <i class="fa fa-truck"></i>
+                @T("Admin.Configuration.Shipping.Methods.Manage")
+            </a>
+            <a href="@Url.Action("Restrictions", "Shipping", new {area = "Admin"})" class="btn bg-blue">
+                <i class="fa fa-globe"></i>
+                @T("Admin.Configuration.Shipping.Restrictions.Manage")
+            </a>
+            <a href="@Url.Action("ProductTypes", "RateByDistrict")" class="btn bg-blue">
+                <i class="fa fa-globe"></i>
+                @T("Plugins.Shipping.RateByDistrict.ProductTypes.Manage")
+            </a>
+            <a class="btn bg-blue" href="@Url.Action("Categories","RateByDistrict")">
+                <i class="fa fa-globe"></i>@T("Plugins.Shipping.RateByDistrict.Categories.Manage")
+            </a>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function checkAdvancedSettingsMode(advanced) {
+        if (advanced) {
+            $("body").addClass("advanced-settings-mode");
+            $("body").removeClass("basic-settings-mode");
+        } else {
+            $("body").removeClass("advanced-settings-mode");
+            $("body").addClass("basic-settings-mode");
+        }
+    }
+
+    checkAdvancedSettingsMode($("#advanced-settings-mode").is(':checked'));
+    $(document)
+        .ready(function() {
+            $("#advanced-settings-mode")
+                .click(function() {
+                    checkAdvancedSettingsMode($(this).is(':checked'));
+                    $.ajax({
+                        cache: false,
+                        url: '@Url.Action("SaveMode", "RateByDistrict")',
+                        type: 'post',
+                        data: { value: $(this).is(':checked') },
+                        dataType: 'json',
+                        error: function(xhr, ajaxOptions, thrownError) {
+                            alert('Failed to save preferences.');
+                        }
+                    });
+                });
+        });
+</script>
+
+@Html.Partial("~/Plugins/Shipping.RateByDistrict/Views/_FixedRate.cshtml")
+@Html.Partial("~/Plugins/Shipping.RateByDistrict/Views/_ByDistrict.cshtml", Model)

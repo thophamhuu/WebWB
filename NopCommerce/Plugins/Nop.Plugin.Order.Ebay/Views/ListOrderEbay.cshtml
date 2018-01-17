@@ -1,0 +1,99 @@
+﻿@using Nop.Web.Framework;
+@using Nop.Web.Framework.UI;
+
+@{
+    Layout = "_AdminLayout.cshtml";
+
+    //page title
+    ViewBag.Title = T("Admin.Orders").Text;
+    //active menu item (system name)
+    Html.SetActiveMenuItemSystemName("Order.Ebay.ListOrderEbay");
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="content">
+        <div class="form-horizontal">
+            <div class="panel-group">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <div id="orders-grid"></div>
+                        <script>
+                        $(document).ready(function() {
+                            $("#orders-grid").kendoGrid({
+                                dataSource: {
+                                    type: "json",
+                                    transport: {
+                                        read: {
+                                            url: "@Html.Raw(Url.Action("ListOrderEbay", "OrderEbay"))",
+                                            type: "POST",
+                                            dataType: "json"
+                                        }
+                                    },
+                                    schema: {
+                                        data: "Data",
+                                        total: "Total",
+                                        errors: "Errors"
+                                    },
+                                    error: function(e) {
+                                        display_kendoui_grid_error(e);
+                                        // Cancel the changes
+                                        this.cancelChanges();
+                                    },
+                                    pageSize: 50,
+                                    serverPaging: true,
+                                    serverFiltering: true,
+                                    serverSorting: true
+                                },
+                                pageable: {
+                                    refresh: true,
+                                    pageSizes: [20, 50, 100, 200, 500],
+                                    @Html.Partial("_GridPagerMessages")
+                                },
+                                editable: {
+                                    confirmation: "@T("Admin.Common.DeleteConfirmation")",
+                                    mode: "inline"
+                                },
+                                scrollable: false,
+                                columns: [
+                                    {
+                                        field: "PaymentStatus",
+                                        title: "Payment Status",
+                                        width: 100
+                                    },
+                                    {
+                                        field: "OrderStatus",
+                                        title: "Order Status",
+                                        width: 150
+                                    },
+                                    {
+                                        field: "Total",
+                                        title: "Pricing Summary",
+                                        width: 150
+                                    }, {
+                                        field: "CreationDate",
+                                        title: "Created On",
+                                        width: 150,
+                                        type: "date",
+                                        format: "{0:G}"
+                                    },
+                                    {
+                                        field: "Id",
+                                        title: "@T("Admin.Common.View")",
+                                        width: 50,
+                                        headerAttributes: { style: "text-align:center" },
+                                        attributes: { style: "text-align:center" },
+                                        template: '<a class="btn btn-default" href="Edit?id=#=Id#"><i class="fa fa-eye"></i>@T("Admin.Common.View")</a>'
+                                    }
+                                ]
+                            } );
+                        });
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

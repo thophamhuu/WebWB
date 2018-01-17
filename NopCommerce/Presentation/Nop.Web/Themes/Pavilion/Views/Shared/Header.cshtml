@@ -1,0 +1,126 @@
+﻿@using Nop.Core
+@using Nop.Core.Infrastructure
+@using Nop.Services.Configuration
+@using Nop.Services.Localization
+@using Nop.Web.Framework.Themes
+@using System.Web.Mvc
+
+@{
+    var controllerName = HttpContext.Current.Request.RequestContext.RouteData.GetRequiredString("controller");
+    var actionName = HttpContext.Current.Request.RequestContext.RouteData.GetRequiredString("action");
+    var isHomePage = controllerName.Equals("home", StringComparison.InvariantCultureIgnoreCase) &&
+                        actionName.Equals("index", StringComparison.InvariantCultureIgnoreCase);
+
+    var currentStore = EngineContext.Current.Resolve<IStoreContext>
+    ().CurrentStore;
+    int storeId = currentStore.Id;
+    var settingsService = EngineContext.Current.Resolve<ISettingService>
+        ();
+    bool isHomeSliderFullWidth = settingsService.GetSettingByKey("pavilionthemesettings.ishomepagemainsliderfullwidth", false, storeId, true);
+    bool stickyCategoryMenuFlyout = settingsService.GetSettingByKey("pavilionthemesettings.StickyCategoryMenuFlyout", true, storeId, true);
+    bool showCategoriesInSideMenu = settingsService.GetSettingByKey("pavilionthemesettings.ShowCategoriesInSideMenu", true, storeId, true);
+
+    var homePageMainSlider = new MvcHtmlString("");
+
+    if (isHomePage)
+    {
+        homePageMainSlider = Html.Widget("home_page_main_slider");
+    }
+}
+@Html.Action("AdminHeaderLinks", "Common")
+<div class="header">
+
+    @Html.Widget("header")
+
+    <div class="header-upper">
+        <div class="center">
+            <div class="worldbuy-header-text">
+                <span>@T("Worldbuy.Themes.Header.Text")</span>
+            </div>
+
+            <div class="header-upper-selector-widget">@Html.Widget("header_upper_selectors")</div>
+            @{
+                var languageSelectorHtml = @Html.Action("LanguageSelector", "Common");
+            }
+            <div class="worldbuy-header-language">
+                @languageSelectorHtml
+            </div>
+        </div>
+    </div>
+
+    <div class="header-middle">
+        <div class="center">
+            <div class="header-logo">
+                @Html.Action("Logo", "Common")
+            </div>
+            <div class="worldbuy-header-search">
+                <div class="search-box store-search-box">
+                    @Html.Action("SearchBox", "Catalog")
+                </div>
+            </div>
+
+            <div class="worldbuy-header-account">
+                <div class="header-links-wrapper">
+                    @Html.Action("HeaderLinks", "Common")
+                </div>
+            </div>
+            <div class="worldbuy-header-cart">
+                @Html.Action("FlyoutShoppingCart", "ShoppingCart")
+            </div>
+        </div>
+    </div>
+
+    <div class="header-lower">
+        <div class="center">
+            <div class="category-navigation-list-wrapper">
+                <span class="category-navigation-title">@T("SevenSpikes.Themes.Pavilion.Header.AllCategories")</span>
+                <ul class="category-navigation-list @if (stickyCategoryMenuFlyout){<text>sticky-flyout</text>}"></ul>
+            </div>
+            <div class="worldbuy-header-menu">
+                <div class="header-menu-parent">
+                    <div class="header-menu @if (showCategoriesInSideMenu){<text>categories-in-side-panel</text>}">
+                        <div class="close-menu">
+                            <span>@T("SevenSpikes.Themes.Common.CloseMenu")</span>
+                        </div>
+                        @{
+                            var menuHtml = Html.Widget("theme_header_menu");
+                        }
+                        @if (!MvcHtmlString.IsNullOrEmpty(menuHtml))
+                        {
+                            @menuHtml
+                        }
+                        else
+                        {
+                            @Html.Action("TopMenu", "Catalog")
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="header-lower-selector-widget">@Html.Widget("header_lower_selectors")</div>
+        </div>
+
+    </div>
+</div>
+
+
+@if (isHomePage)
+{
+    <div class="worldbuy-header-slider">
+        <div class="worldbuy-center">
+            @Html.Action("PopularProductTags", "Catalog")
+        </div>
+        <div class="worldbuy-two-columns-area">
+
+            <div class="worldbuy-center">
+                <div class="worldbuy-header-slider-left">
+                    @homePageMainSlider
+                </div>
+                <div class="worldbuy-header-slider-right">
+                    @Html.Widget("worldbuy_header_slider_center")
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+}
