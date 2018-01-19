@@ -14,7 +14,7 @@ namespace Nop.Services.Payments
     /// <summary>
     /// Payment service
     /// </summary>
-    public partial class PaymentService : IPaymentService
+    public partial class PaymentService : ApiService, IPaymentService
     {
         #region Fields
 
@@ -34,7 +34,7 @@ namespace Nop.Services.Payments
         /// <param name="pluginFinder">Plugin finder</param>
         /// <param name="settingService">Setting service</param>
         /// <param name="shoppingCartSettings">Shopping cart settings</param>
-        public PaymentService(PaymentSettings paymentSettings, 
+        public PaymentService(PaymentSettings paymentSettings,
             IPluginFinder pluginFinder,
             ISettingService settingService,
             ShoppingCartSettings shoppingCartSettings)
@@ -171,7 +171,13 @@ namespace Nop.Services.Payments
             var paymentMethod = LoadPaymentMethodBySystemName(processPaymentRequest.PaymentMethodSystemName);
             if (paymentMethod == null)
                 throw new NopException("Payment method couldn't be loaded");
-            return paymentMethod.ProcessPayment(processPaymentRequest);
+
+            if (CheckUseApi)
+            {
+                return APIHelper.Instance.PostAsync<ProcessPaymentResult>("Payments", "ProcessPayment", (object)processPaymentRequest);
+            }
+            else
+                return paymentMethod.ProcessPayment(processPaymentRequest);
         }
 
         /// <summary>
@@ -183,11 +189,18 @@ namespace Nop.Services.Payments
             //already paid or order.OrderTotal == decimal.Zero
             if (postProcessPaymentRequest.Order.PaymentStatus == PaymentStatus.Paid)
                 return;
-
             var paymentMethod = LoadPaymentMethodBySystemName(postProcessPaymentRequest.Order.PaymentMethodSystemName);
             if (paymentMethod == null)
                 throw new NopException("Payment method couldn't be loaded");
-            paymentMethod.PostProcessPayment(postProcessPaymentRequest);
+            if (CheckUseApi)
+            {
+                var body = (object)postProcessPaymentRequest;
+                APIHelper.Instance.PostAsync("Payments", "PostProcessPayment", body);
+            }
+            else
+            {
+                paymentMethod.PostProcessPayment(postProcessPaymentRequest);
+            }
         }
 
         /// <summary>
@@ -246,7 +259,7 @@ namespace Nop.Services.Payments
             }
             return result;
         }
-        
+
         /// <summary>
         /// Gets a value indicating whether capture is supported by payment method
         /// </summary>
@@ -272,7 +285,7 @@ namespace Nop.Services.Payments
                 throw new NopException("Payment method couldn't be loaded");
             return paymentMethod.Capture(capturePaymentRequest);
         }
-        
+
         /// <summary>
         /// Gets a value indicating whether partial refund is supported by payment method
         /// </summary>
@@ -311,7 +324,7 @@ namespace Nop.Services.Payments
                 throw new NopException("Payment method couldn't be loaded");
             return paymentMethod.Refund(refundPaymentRequest);
         }
-        
+
         /// <summary>
         /// Gets a value indicating whether void is supported by payment method
         /// </summary>
@@ -337,7 +350,7 @@ namespace Nop.Services.Payments
                 throw new NopException("Payment method couldn't be loaded");
             return paymentMethod.Void(voidPaymentRequest);
         }
-        
+
         /// <summary>
         /// Gets a recurring payment type of payment method
         /// </summary>
@@ -370,7 +383,12 @@ namespace Nop.Services.Payments
             var paymentMethod = LoadPaymentMethodBySystemName(processPaymentRequest.PaymentMethodSystemName);
             if (paymentMethod == null)
                 throw new NopException("Payment method couldn't be loaded");
-            return paymentMethod.ProcessRecurringPayment(processPaymentRequest);
+            if (CheckUseApi)
+            {
+                return APIHelper.Instance.PostAsync<ProcessPaymentResult>("Payments", "ProcessRecurringPayment", (object)processPaymentRequest);
+            }
+            else
+                return paymentMethod.ProcessRecurringPayment(processPaymentRequest);
         }
 
         /// <summary>
