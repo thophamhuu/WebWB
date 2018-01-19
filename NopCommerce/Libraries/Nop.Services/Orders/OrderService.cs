@@ -13,7 +13,7 @@ namespace Nop.Services.Orders
     /// <summary>
     /// Order service
     /// </summary>
-    public partial class OrderService : IOrderService
+    public partial class OrderService :ApiService, IOrderService
     {
         #region Fields
 
@@ -251,7 +251,16 @@ namespace Nop.Services.Orders
             if (order == null)
                 throw new ArgumentNullException("order");
 
-            _orderRepository.Insert(order);
+            if (CheckUseApi)
+            {
+                var result  = APIHelper.Instance.PostAsync<Order>("Orders", "InsertOrder", (object)order);
+                order.Id = result.Id;
+            }
+            else
+            {
+                _orderRepository.Insert(order);
+            }
+            
 
             //event notification
             _eventPublisher.EntityInserted(order);
