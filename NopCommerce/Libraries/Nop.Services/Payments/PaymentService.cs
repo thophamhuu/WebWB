@@ -14,7 +14,7 @@ namespace Nop.Services.Payments
     /// <summary>
     /// Payment service
     /// </summary>
-    public partial class PaymentService : ApiService, IPaymentService
+    public partial class PaymentService : IPaymentService
     {
         #region Fields
 
@@ -172,12 +172,7 @@ namespace Nop.Services.Payments
             if (paymentMethod == null)
                 throw new NopException("Payment method couldn't be loaded");
 
-            if (CheckUseApi)
-            {
-                return APIHelper.Instance.PostAsync<ProcessPaymentResult>("Payments", "ProcessPayment", (object)processPaymentRequest);
-            }
-            else
-                return paymentMethod.ProcessPayment(processPaymentRequest);
+            return paymentMethod.ProcessPayment(processPaymentRequest);
         }
 
         /// <summary>
@@ -192,15 +187,7 @@ namespace Nop.Services.Payments
             var paymentMethod = LoadPaymentMethodBySystemName(postProcessPaymentRequest.Order.PaymentMethodSystemName);
             if (paymentMethod == null)
                 throw new NopException("Payment method couldn't be loaded");
-            if (CheckUseApi)
-            {
-                var body = (object)postProcessPaymentRequest;
-                APIHelper.Instance.PostAsync("Payments", "PostProcessPayment", body);
-            }
-            else
-            {
-                paymentMethod.PostProcessPayment(postProcessPaymentRequest);
-            }
+            paymentMethod.PostProcessPayment(postProcessPaymentRequest);
         }
 
         /// <summary>
@@ -383,12 +370,7 @@ namespace Nop.Services.Payments
             var paymentMethod = LoadPaymentMethodBySystemName(processPaymentRequest.PaymentMethodSystemName);
             if (paymentMethod == null)
                 throw new NopException("Payment method couldn't be loaded");
-            if (CheckUseApi)
-            {
-                return APIHelper.Instance.PostAsync<ProcessPaymentResult>("Payments", "ProcessRecurringPayment", (object)processPaymentRequest);
-            }
-            else
-                return paymentMethod.ProcessRecurringPayment(processPaymentRequest);
+            return paymentMethod.ProcessRecurringPayment(processPaymentRequest);
         }
 
         /// <summary>

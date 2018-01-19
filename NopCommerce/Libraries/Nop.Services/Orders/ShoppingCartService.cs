@@ -16,7 +16,7 @@ using Nop.Services.Localization;
 using Nop.Services.Security;
 using Nop.Services.Shipping.Date;
 using Nop.Services.Stores;
-using Nop.Api.Models.Responses;
+using Nop.Services.Models.Responses;
 
 namespace Nop.Services.Orders
 {

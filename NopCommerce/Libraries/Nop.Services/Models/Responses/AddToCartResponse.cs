@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 
-namespace Nop.Api.Models.Responses
+namespace Nop.Services.Models.Responses
 {
     public class AddToCartResponse
     {
