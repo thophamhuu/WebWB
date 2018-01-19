@@ -13,7 +13,7 @@ namespace Nop.Services.Shipping
     /// <summary>
     /// Shipment service
     /// </summary>
-    public partial class ShipmentService : IShipmentService
+    public partial class ShipmentService : ApiService, IShipmentService
     {
         #region Fields
 
@@ -160,7 +160,16 @@ namespace Nop.Services.Shipping
             if (shipmentId == 0)
                 return null;
 
-            return _shipmentRepository.GetById(shipmentId);
+            if (CheckUseApi)
+            {
+                var parameters = new Dictionary<string, dynamic>();
+                parameters.Add("shipmentId", shipmentId);
+                return APIHelper.Instance.GetAsync<Shipment>("Shippings", "GetShipmentById", parameters);
+            }
+            else
+            {
+                return _shipmentRepository.GetById(shipmentId);
+            }
         }
 
         /// <summary>
