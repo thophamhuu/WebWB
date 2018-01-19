@@ -869,7 +869,6 @@ namespace Nop.Web.Controllers
             if (_workContext.CurrentCustomer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed)
                 return new HttpUnauthorizedResult();
 
-
             //model
             var model = _checkoutModelFactory.PrepareConfirmOrderModel(cart);
             try
