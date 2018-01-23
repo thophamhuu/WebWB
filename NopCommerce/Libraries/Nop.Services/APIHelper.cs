@@ -18,6 +18,7 @@ namespace Nop.Services
 {
     public sealed class APIHelper
     {
+        
         private const string API_PATTERN = "/api/{0}/{1}";
         private HttpClient _client;
         private string _clientId = "58aeb213-3887-40dd-928c-40a36b2d5ea3";
@@ -26,9 +27,9 @@ namespace Nop.Services
         private APIHelper()
         {
             //var nopConfig = EngineContext.Current.Resolve<NopConfig>();
-
+            
             _client = new HttpClient();
-            _client.BaseAddress = new Uri("http://localhost:49647/");
+            _client.BaseAddress = new Uri(_apiUrl);
             _client.Timeout = TimeSpan.FromSeconds(20000);
 
             try
@@ -54,6 +55,7 @@ namespace Nop.Services
             }
 
         }
+        private static string _apiUrl = "";
         private static APIHelper _instance = null;
         private static object syncRoot = new object();
         public static APIHelper Instance
@@ -75,8 +77,9 @@ namespace Nop.Services
 
             }
         }
-        public static void Initilize()
+        public static void Initilize(string apiUrl)
         {
+            _apiUrl = apiUrl; 
             _instance = new APIHelper();
         }
         private void AccessToken(APISettings apiSettings = null)

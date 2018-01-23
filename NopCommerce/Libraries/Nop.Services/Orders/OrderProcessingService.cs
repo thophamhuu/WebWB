@@ -236,7 +236,9 @@ namespace Nop.Services.Orders
             public string CustomerCurrencyCode { get; set; }
             public decimal CustomerCurrencyRate { get; set; }
 
+            public int BillingAddressId { get; set; }
             public Address BillingAddress { get; set; }
+            public int ShippingAddressId { get; set; }
             public Address ShippingAddress {get; set; }
             public ShippingStatus ShippingStatus { get; set; }
             public string ShippingMethodName { get; set; }
@@ -321,6 +323,7 @@ namespace Nop.Services.Orders
                 throw new NopException("Email is not valid");
 
             details.BillingAddress = (Address)details.Customer.BillingAddress.Clone();
+            details.BillingAddressId = details.Customer.BillingAddress.Id;
             if (details.BillingAddress.Country != null && !details.BillingAddress.Country.AllowsBilling)
                 throw new NopException(string.Format("Country '{0}' is not allowed for billing", details.BillingAddress.Country.Name));
 
@@ -422,6 +425,7 @@ namespace Nop.Services.Orders
 
                     //clone shipping address
                     details.ShippingAddress = (Address)details.Customer.ShippingAddress.Clone();
+                    details.ShippingAddressId = details.Customer.ShippingAddress.Id;
                     if (details.ShippingAddress.Country != null && !details.ShippingAddress.Country.AllowsShipping)
                         throw new NopException(string.Format("Country '{0}' is not allowed for shipping", details.ShippingAddress.Country.Name));
                 }

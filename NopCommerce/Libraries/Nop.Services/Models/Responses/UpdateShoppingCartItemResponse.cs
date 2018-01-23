@@ -6,9 +6,9 @@ using System.Web;
 
 namespace Nop.Services.Models.Responses
 {
-    public class AddToCartResponse
+    public class UpdateShoppingCartItemResponse
     {
         public IList<string> warnings { get; set; }
-        public List<ShoppingCartItem> ShoppingCartItems{ get; set; }
+        public ShoppingCartItem ShoppingCartItem { get; set; }
     }
 }

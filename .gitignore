@@ -278,6 +278,7 @@ __pycache__/
 *.xsd.cs
 
 # NopCommerce Plugins
+/NopCommerce/Presentation/Nop.Web/App_Data/ApiSettings.txt
 /NopCommerce/Presentation/Nop.Web/Plugins/*
 !/NopCommerce/Presentation/Nop.Web/Plugins/bin
 !/NopCommerce/Presentation/Nop.Web/Plugins/SevenSpikes.*

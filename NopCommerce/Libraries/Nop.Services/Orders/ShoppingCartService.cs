@@ -16,7 +16,7 @@ using Nop.Services.Localization;
 using Nop.Services.Security;
 using Nop.Services.Shipping.Date;
 using Nop.Services.Stores;
-using Nop.Api.Models.Responses;
+using Nop.Services.Models.Responses;
 
 namespace Nop.Services.Orders
 {
@@ -1119,6 +1119,8 @@ namespace Nop.Services.Orders
 
                 //updated "HasShoppingCartItems" property used for performance optimization
                 customer.HasShoppingCartItems = customer.ShoppingCartItems.Any();
+                _customerService.UpdateCustomer(customer);
+
                 warnings = response.warnings.ToList();
             }
             else
@@ -1149,7 +1151,6 @@ namespace Nop.Services.Orders
                         shoppingCartItem.AttributesXml = attributesXml;
                         shoppingCartItem.Quantity = newQuantity;
                         shoppingCartItem.UpdatedOnUtc = DateTime.UtcNow;
-                        _customerService.UpdateCustomer(customer);
 
                         //event notification
                         _eventPublisher.EntityUpdated(shoppingCartItem);
@@ -1262,17 +1263,45 @@ namespace Nop.Services.Orders
                         rentalStartDate, rentalEndDate, quantity, false));
                     if (!warnings.Any())
                     {
-                        //if everything is OK, then update a shopping cart item
-                        shoppingCartItem.Quantity = quantity;
-                        shoppingCartItem.AttributesXml = attributesXml;
-                        shoppingCartItem.CustomerEnteredPrice = customerEnteredPrice;
-                        shoppingCartItem.RentalStartDateUtc = rentalStartDate;
-                        shoppingCartItem.RentalEndDateUtc = rentalEndDate;
-                        shoppingCartItem.UpdatedOnUtc = DateTime.UtcNow;
-                        _customerService.UpdateCustomer(customer);
+                        if (CheckUseApi)
+                        {
+                            int customerId = customer.Id;
+                            var body = new
+                            {
+                                customerId,
+                                shoppingCartItemId,
+                                attributesXml,
+                                customerEnteredPrice,
+                                rentalStartDate,
+                                rentalEndDate,
+                                quantity,
+                                resetCheckoutData
+                            };
+                            var response = APIHelper.Instance.PostAsync<UpdateShoppingCartItemResponse>("Orders", "UpdateShoppingCartItem", body);
 
-                        //event notification
-                        _eventPublisher.EntityUpdated(shoppingCartItem);
+
+                            //updated "HasShoppingCartItems" property used for performance optimization
+                            customer.HasShoppingCartItems = customer.ShoppingCartItems.Any();
+                            _customerService.UpdateCustomer(customer);
+
+                            warnings = response.warnings.ToList();
+                        }
+                        else
+                        {
+                            //if everything is OK, then update a shopping cart item
+                            shoppingCartItem.Quantity = quantity;
+                            shoppingCartItem.AttributesXml = attributesXml;
+                            shoppingCartItem.CustomerEnteredPrice = customerEnteredPrice;
+                            shoppingCartItem.RentalStartDateUtc = rentalStartDate;
+                            shoppingCartItem.RentalEndDateUtc = rentalEndDate;
+                            shoppingCartItem.UpdatedOnUtc = DateTime.UtcNow;
+                            _customerService.UpdateCustomer(customer);
+
+                            //event notification
+                            _eventPublisher.EntityUpdated(shoppingCartItem);
+                        }
+
+                        
                     }
                 }
                 else
@@ -1281,6 +1310,8 @@ namespace Nop.Services.Orders
                     DeleteShoppingCartItem(shoppingCartItem, resetCheckoutData, true);
                 }
             }
+            
+
 
             return warnings;
         }

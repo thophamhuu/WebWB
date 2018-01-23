@@ -20,6 +20,7 @@ using Nop.Web.Framework.Mvc.Routes;
 using Nop.Web.Framework.Themes;
 using StackExchange.Profiling;
 using StackExchange.Profiling.Mvc;
+using Nop.Services;
 
 namespace Nop.Web
 {
@@ -29,11 +30,11 @@ namespace Nop.Web
         {
             routes.IgnoreRoute("favicon.ico");
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
-            
+
             //register custom routes (plugins, etc)
             var routePublisher = EngineContext.Current.Resolve<IRoutePublisher>();
             routePublisher.RegisterRoutes(routes);
-            
+
             routes.MapRoute(
                 "Default", // Route name
                 "{controller}/{action}/{id}", // URL with parameters
@@ -44,6 +45,14 @@ namespace Nop.Web
 
         protected void Application_Start()
         {
+            if (Context.IsDebuggingEnabled)
+            {
+                APIHelper.Initilize("http://localhost:49647/");
+            }
+            else
+            {
+                APIHelper.Initilize("http://api.worldbuy.vn/");
+            }
             //most of API providers require TLS 1.2 nowadays
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
@@ -68,7 +77,7 @@ namespace Nop.Web
             //Registering some regular mvc stuff
             AreaRegistration.RegisterAllAreas();
             RegisterRoutes(RouteTable.Routes);
-            
+
             //fluent validation
             DataAnnotationsModelValidatorProvider.AddImplicitRequiredAttributeForValueTypes = false;
             ModelValidatorProviders.Providers.Add(new FluentValidationModelValidatorProvider(new NopValidatorFactory()));
@@ -145,7 +154,7 @@ namespace Nop.Web
         }
 
         protected void Application_AuthenticateRequest(object sender, EventArgs e)
-        { 
+        {
             //we don't do it in Application_BeginRequest because a user is not authenticated yet
             SetWorkingCulture();
         }
@@ -179,7 +188,7 @@ namespace Nop.Web
                 }
             }
         }
-        
+
         protected void SetWorkingCulture()
         {
             if (!DataSettingsHelper.DatabaseIsInstalled())
@@ -222,7 +231,7 @@ namespace Nop.Web
         {
             if (exc == null)
                 return;
-            
+
             if (!DataSettingsHelper.DatabaseIsInstalled())
                 return;
 
