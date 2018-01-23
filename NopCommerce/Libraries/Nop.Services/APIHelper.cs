@@ -80,7 +80,6 @@ namespace Nop.Services
         public static void Initilize(string apiUrl)
         {
             _apiUrl = apiUrl; 
-            _instance = new APIHelper();
         }
         private void AccessToken(APISettings apiSettings = null)
         {

@@ -39,7 +39,7 @@ namespace Nop.Services.Orders
     public partial class OrderProcessingService : IOrderProcessingService
     {
         #region Fields
-        
+
         private readonly IOrderService _orderService;
         private readonly IWebHelper _webHelper;
         private readonly ILocalizationService _localizationService;
@@ -232,14 +232,14 @@ namespace Nop.Services.Orders
             public Customer Customer { get; set; }
             public Language CustomerLanguage { get; set; }
             public int AffiliateId { get; set; }
-            public TaxDisplayType CustomerTaxDisplayType {get; set; }
+            public TaxDisplayType CustomerTaxDisplayType { get; set; }
             public string CustomerCurrencyCode { get; set; }
             public decimal CustomerCurrencyRate { get; set; }
 
             public int BillingAddressId { get; set; }
             public Address BillingAddress { get; set; }
             public int ShippingAddressId { get; set; }
-            public Address ShippingAddress {get; set; }
+            public Address ShippingAddress { get; set; }
             public ShippingStatus ShippingStatus { get; set; }
             public string ShippingMethodName { get; set; }
             public string ShippingRateComputationMethodSystemName { get; set; }
@@ -263,11 +263,11 @@ namespace Nop.Services.Orders
             public decimal OrderSubTotalDiscountExclTax { get; set; }
             public decimal OrderShippingTotalInclTax { get; set; }
             public decimal OrderShippingTotalExclTax { get; set; }
-            public decimal PaymentAdditionalFeeInclTax {get; set; }
+            public decimal PaymentAdditionalFeeInclTax { get; set; }
             public decimal PaymentAdditionalFeeExclTax { get; set; }
-            public decimal OrderTaxTotal  {get; set; }
-            public string VatNumber {get; set; }
-            public string TaxRates {get; set; }
+            public decimal OrderTaxTotal { get; set; }
+            public string VatNumber { get; set; }
+            public string TaxRates { get; set; }
             public decimal OrderDiscountAmount { get; set; }
             public int RedeemedRewardPoints { get; set; }
             public decimal RedeemedRewardPointsAmount { get; set; }
@@ -453,7 +453,7 @@ namespace Nop.Services.Orders
             details.OrderShippingTotalInclTax = orderShippingTotalInclTax.Value;
             details.OrderShippingTotalExclTax = orderShippingTotalExclTax.Value;
 
-            foreach(var disc in shippingTotalDiscounts)
+            foreach (var disc in shippingTotalDiscounts)
                 if (!details.AppliedDiscounts.ContainsDiscount(disc))
                     details.AppliedDiscounts.Add(disc);
 
@@ -562,7 +562,7 @@ namespace Nop.Services.Orders
             //billing address
             if (details.InitialOrder.BillingAddress == null)
                 throw new NopException("Billing address is not available");
-            
+
             details.BillingAddress = (Address)details.InitialOrder.BillingAddress.Clone();
             if (details.BillingAddress.Country != null && !details.BillingAddress.Country.AllowsBilling)
                 throw new NopException(string.Format("Country '{0}' is not allowed for billing", details.BillingAddress.Country.Name));
@@ -594,7 +594,7 @@ namespace Nop.Services.Orders
                 }
                 else
                     if (details.InitialOrder.PickupAddress != null)
-                        details.PickupAddress = (Address)details.InitialOrder.PickupAddress.Clone();
+                    details.PickupAddress = (Address)details.InitialOrder.PickupAddress.Clone();
                 details.ShippingMethodName = details.InitialOrder.ShippingMethod;
                 details.ShippingRateComputationMethodSystemName = details.InitialOrder.ShippingRateComputationMethodSystemName;
                 details.ShippingStatus = ShippingStatus.NotYetShipped;
@@ -631,7 +631,7 @@ namespace Nop.Services.Orders
         /// <param name="processPaymentResult">Process payment result</param>
         /// <param name="details">Details</param>
         /// <returns>Order</returns>
-        protected virtual Order SaveOrderDetails(ProcessPaymentRequest processPaymentRequest, 
+        protected virtual Order SaveOrderDetails(ProcessPaymentRequest processPaymentRequest,
             ProcessPaymentResult processPaymentResult, PlaceOrderContainter details)
         {
             var order = new Order
@@ -678,8 +678,8 @@ namespace Nop.Services.Orders
                 SubscriptionTransactionId = processPaymentResult.SubscriptionTransactionId,
                 PaymentStatus = processPaymentResult.NewPaymentStatus,
                 PaidDateUtc = null,
-                BillingAddress = details.BillingAddress,
-                ShippingAddress = details.ShippingAddress,
+                BillingAddressId = details.BillingAddressId,
+                ShippingAddressId = details.ShippingAddressId,
                 ShippingStatus = details.ShippingStatus,
                 ShippingMethod = details.ShippingMethodName,
                 PickUpInStore = details.PickUpInStore,
@@ -693,6 +693,7 @@ namespace Nop.Services.Orders
 
             _orderService.InsertOrder(order);
 
+            order = _orderService.GetOrderById(order.Id);
             //generate and set custom order number
             order.CustomOrderNumber = _customNumberFormatter.GenerateOrderCustomNumber(order);
             _orderService.UpdateOrder(order);
@@ -867,7 +868,7 @@ namespace Nop.Services.Orders
         /// <param name="activate">A value indicating whether to activate gift cards; true - activate, false - deactivate</param>
         protected virtual void SetActivatedValueForPurchasedGiftCards(Order order, bool activate)
         {
-            var giftCards = _giftCardService.GetAllGiftCards(purchasedWithOrderId: order.Id, 
+            var giftCards = _giftCardService.GetAllGiftCards(purchasedWithOrderId: order.Id,
                 isGiftCardActivated: !activate);
             foreach (var gc in giftCards)
             {
@@ -925,11 +926,11 @@ namespace Nop.Services.Orders
 
             //order notes, notifications
             order.OrderNotes.Add(new OrderNote
-                {
-                    Note = string.Format("Order status has been changed to {0}", os.ToString()),
-                    DisplayToCustomer = false,
-                    CreatedOnUtc = DateTime.UtcNow
-                });
+            {
+                Note = string.Format("Order status has been changed to {0}", os.ToString()),
+                DisplayToCustomer = false,
+                CreatedOnUtc = DateTime.UtcNow
+            });
             _orderService.UpdateOrder(order);
 
 
@@ -1059,7 +1060,7 @@ namespace Nop.Services.Orders
                 {
                     if (attributeValue.AttributeValueType == AttributeValueType.AssociatedToProduct)
                     {
-                       purchasedProductIds.Add(attributeValue.AssociatedProductId);
+                        purchasedProductIds.Add(attributeValue.AssociatedProductId);
                     }
                 }
             }
@@ -1653,7 +1654,7 @@ namespace Nop.Services.Orders
                 CreatedOnUtc = DateTime.UtcNow
             });
             _orderService.UpdateOrder(order);
-            
+
             //now delete an order
             _orderService.DeleteOrder(order);
         }
@@ -1921,7 +1922,7 @@ namespace Nop.Services.Orders
 
                     //notify a store owner
                     _workflowMessageService
-                        .SendRecurringPaymentCancelledStoreOwnerNotification(recurringPayment, 
+                        .SendRecurringPaymentCancelledStoreOwnerNotification(recurringPayment,
                         _localizationSettings.DefaultAdminLanguageId);
                 }
             }
@@ -2058,11 +2059,11 @@ namespace Nop.Services.Orders
 
             //add a note
             order.OrderNotes.Add(new OrderNote
-                {
-                    Note = string.Format("Shipment# {0} has been sent", shipment.Id),
-                    DisplayToCustomer = false,
-                    CreatedOnUtc = DateTime.UtcNow
-                });
+            {
+                Note = string.Format("Shipment# {0} has been sent", shipment.Id),
+                DisplayToCustomer = false,
+                CreatedOnUtc = DateTime.UtcNow
+            });
             _orderService.UpdateOrder(order);
 
             if (notifyCustomer)
@@ -2336,7 +2337,7 @@ namespace Nop.Services.Orders
                     _orderService.UpdateOrder(order);
 
                     CheckOrderStatus(order);
-     
+
                     if (order.PaymentStatus == PaymentStatus.Paid)
                     {
                         ProcessOrderPaid(order);
@@ -2424,7 +2425,7 @@ namespace Nop.Services.Orders
             _orderService.UpdateOrder(order);
 
             CheckOrderStatus(order);
-   
+
             if (order.PaymentStatus == PaymentStatus.Paid)
             {
                 ProcessOrderPaid(order);
@@ -2460,7 +2461,7 @@ namespace Nop.Services.Orders
 
             return false;
         }
-        
+
         /// <summary>
         /// Refunds an order (from admin panel)
         /// </summary>
@@ -2839,7 +2840,7 @@ namespace Nop.Services.Orders
         {
             if (order == null)
                 throw new ArgumentNullException("order");
-            
+
             if (!CanPartiallyRefundOffline(order, amountToRefund))
                 throw new NopException("You can't partially refund (offline) this order");
 
@@ -3055,7 +3056,7 @@ namespace Nop.Services.Orders
             foreach (var orderItem in order.OrderItems)
             {
                 _shoppingCartService.AddToCart(order.Customer, orderItem.Product,
-                    ShoppingCartType.ShoppingCart, order.StoreId, 
+                    ShoppingCartType.ShoppingCart, order.StoreId,
                     orderItem.AttributesXml, orderItem.UnitPriceExclTax,
                     orderItem.RentalStartDateUtc, orderItem.RentalEndDateUtc,
                     orderItem.Quantity, false);
@@ -3065,7 +3066,7 @@ namespace Nop.Services.Orders
             //comment the code below if you want to disable this functionality
             _genericAttributeService.SaveAttribute(order.Customer, SystemCustomerAttributeNames.CheckoutAttributes, order.CheckoutAttributesXml, order.StoreId);
         }
-        
+
         /// <summary>
         /// Check whether return request is allowed
         /// </summary>
@@ -3094,7 +3095,7 @@ namespace Nop.Services.Orders
             //ensure that we have at least one returnable product
             return order.OrderItems.Any(oi => !oi.Product.NotReturnable);
         }
-        
+
 
 
         /// <summary>
