@@ -72,8 +72,17 @@ namespace Nop.Services.Orders
         {
             if (orderId == 0)
                 return null;
-
-            return _orderRepository.GetById(orderId);
+            if (CheckUseApi)
+            {
+                var parameters = new Dictionary<string, dynamic>();
+                parameters.Add("orderId", orderId);
+                return APIHelper.Instance.GetAsync<Order>("Orders", "GetOrderById", parameters);
+            }
+            else
+            {
+                return _orderRepository.GetById(orderId);
+            }
+            
         }
 
         /// <summary>
