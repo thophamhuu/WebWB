@@ -157,7 +157,7 @@ namespace Nop.Web.Controllers
         {
             var order = _orderService.GetOrderById(orderId);
             if (order == null || order.Deleted || _workContext.CurrentCustomer.Id != order.CustomerId)
-                return new HttpUnauthorizedResult();
+                return RedirectToRoute("CustomerOrders");
 
             var model = _orderModelFactory.PrepareOrderDetailsModel(order);
             return View(model);

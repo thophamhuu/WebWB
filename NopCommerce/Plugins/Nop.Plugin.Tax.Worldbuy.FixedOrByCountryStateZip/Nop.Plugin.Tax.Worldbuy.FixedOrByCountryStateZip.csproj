@@ -90,7 +90,6 @@
     <Compile Include="Models\WB_TaxCategoryMappingModel.cs" />
     <Compile Include="Services\IWB_TaxCategoryMappingService.cs" />
     <Compile Include="Services\WB_TaxCategoryMappingService.cs" />
-    <Compile Include="Services\WB_TaxService.cs" />
     <Compile Include="WB_FixedOrByCountryStateZipTaxProvider.cs" />
     <Compile Include="WB_FixedOrByCountryStateZipTaxSettings.cs" />
     <Compile Include="Infrastructure\Cache\WB_ModelCacheEventConsumer.cs" />

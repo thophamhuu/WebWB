@@ -52,14 +52,6 @@
       <HintPath>..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Nop.Plugin.Affiliate.CategoryMap">
-      <HintPath>..\..\Presentation\Nop.Web\Plugins\Affiliate.CategoryMap\Nop.Plugin.Affiliate.CategoryMap.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Nop.Plugin.Affiliate.Ebay">
-      <HintPath>..\..\Presentation\Nop.Web\Plugins\Affiliate.Ebay\Nop.Plugin.Affiliate.Ebay.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System">
       <Private>False</Private>
     </Reference>
@@ -179,6 +171,16 @@
     <ProjectReference Include="..\..\Presentation\Nop.Web\Administration\Nop.Admin.csproj">
       <Project>{152c761a-dd2e-4c1f-af89-dfb2547a3bca}</Project>
       <Name>Nop.Admin</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Nop.Plugin.Affiliate.CategoryMap\Nop.Plugin.Affiliate.CategoryMap.csproj">
+      <Project>{00ed2f85-b5fb-4005-a817-fdfe9083f8ef}</Project>
+      <Name>Nop.Plugin.Affiliate.CategoryMap</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Nop.Plugin.Affiliate.Ebay\Nop.Plugin.Affiliate.Ebay.csproj">
+      <Project>{cd5db22e-52eb-4423-a2f2-133f0ce8c74e}</Project>
+      <Name>Nop.Plugin.Affiliate.Ebay</Name>
       <Private>False</Private>
     </ProjectReference>
   </ItemGroup>

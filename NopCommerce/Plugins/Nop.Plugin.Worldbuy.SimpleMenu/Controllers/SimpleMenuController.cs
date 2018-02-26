@@ -3,6 +3,7 @@ using Nop.Core;
 using Nop.Core.Data;
 using Nop.Core.Domain.Configuration;
 using Nop.Core.Domain.Localization;
+using Nop.Core.Infrastructure;
 using Nop.Core.Plugins;
 using Nop.Plugin.Worldbuy.SimpleMenu.Domain;
 using Nop.Plugin.Worldbuy.SimpleMenu.Models;
@@ -353,13 +354,16 @@ namespace Nop.Plugin.Worldbuy.SimpleMenu.Controllers
                             file.SaveAs(filePath);
                         }
                     }
-
+                    var url = model.Url;
+                    var webHelper = EngineContext.Current.Resolve<Nop.Core.IWebHelper>();
+                    var storeUrl = webHelper.GetStoreLocation();
+                    url = url.Replace(storeUrl, "/");
                     var entity = _simpleMenuItemRepo.GetById(model.Id) ?? new WB_SimpleMenuItem
                     {
                         Id = 0,
                         MenuID = model.MenuID,
                         Title = model.Title,
-                        Url = model.Url,
+                        Url = url,
                         Order = model.Order,
                         IconUrlImage = fileName != "" ? Url.Content(fileName) : fileName
                     };
@@ -385,8 +389,6 @@ namespace Nop.Plugin.Worldbuy.SimpleMenu.Controllers
                     LogException(ex);
                 }
             }
-
-
             return Json(new { Status = status, Message = message });
         }
         [AdminAuthorize]

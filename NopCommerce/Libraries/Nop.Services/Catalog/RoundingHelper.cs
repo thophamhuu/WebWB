@@ -101,8 +101,8 @@ namespace Nop.Services.Catalog
                     {
                         decimal d = rez / 1000;
                         t = (d - Math.Truncate(d)) * 1000;
-                        if (roundingType == RoundingType.Rounding1000Up && t > 0)
-                            rez = (Math.Truncate(d)+1) * 1000;
+                        if (roundingType == RoundingType.Rounding1000Up && t >= 100)
+                            rez = (Math.Truncate(d) + 1) * 1000;
                         else
                             rez = (Math.Truncate(d)) * 1000;
                     }

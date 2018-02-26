@@ -1,4 +1,5 @@
-﻿using Nop.Plugin.Worldbuy.AnyBanner.Models;
+﻿using Nop.Plugin.Worldbuy.AnyBanner.Domain;
+using Nop.Plugin.Worldbuy.AnyBanner.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +11,7 @@ namespace Nop.Plugin.Worldbuy.AnyBanner.Services
 {
     public interface IWB_AnyBannerItemService
     {
-        WB_AnyBannerItemModel GetModelById(int id);
-        IList<WB_AnyBannerItemModel> GetAllModelsByBannerId(int bannerId);
+        WB_AnyBannerItem GetModelById(int id);
+        IList<WB_AnyBannerItem> GetAllModelsByBannerId(int bannerId);
     }
 }

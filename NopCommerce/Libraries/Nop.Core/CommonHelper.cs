@@ -19,6 +19,9 @@ namespace Nop.Core
     /// </summary>
     public partial class CommonHelper
     {
+        //private const string ftpUserName = "thor";
+        //private const string ftpPassword = "WB@123";
+
         /// <summary>
         /// Ensures the subscriber email or throw.
         /// </summary>
@@ -352,6 +355,112 @@ namespace Nop.Core
             string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
             path = path.Replace("~/", "").TrimStart('/').Replace('/', '\\');
             return Path.Combine(baseDirectory, path);
-        }        
+        }
+        public static string HttpToFtp(string path)
+        {
+            return path.Replace("http://", "ftp://");
+        }
+        public static string MapPathServer(string path, bool isProcess = false, WebProtocal webProtocal = WebProtocal.HTTP)
+        {
+            RemoteFile remoteFile = null;
+            switch (webProtocal)
+            {
+                case WebProtocal.HTTP:
+                    remoteFile = new HttpRemoteFile();
+                    break;
+                default: break;
+            }
+            string serverHost = "";
+            if (!isProcess)
+                serverHost = HttpContext.Current.IsDebuggingEnabled ? "localhost:81" : "103.9.159.122";
+            else
+            {
+                serverHost = (HttpContext.Current.IsDebuggingEnabled ? "localhost" : "103.9.159.122") + ":" + 8080;
+            }
+            return remoteFile.MapPath(serverHost, path);
+        }
+
+        public static bool CheckIfFileExistsOnServer(string fileName, WebProtocal webProtocal = WebProtocal.HTTP)
+        {
+            RemoteFile remoteFile = null;
+            switch (webProtocal)
+            {
+                case WebProtocal.HTTP:
+                    remoteFile = new HttpRemoteFile();
+                    break;
+                default: break;
+            }
+            return remoteFile.CheckIfFileExistsOnServer(fileName) == HttpStatusCode.OK;
+        }
+
+        public static byte[] DownloadFileFromServer(string filePath, WebProtocal webProtocal = WebProtocal.HTTP)
+        {
+
+            RemoteFile remoteFile = null;
+            switch (webProtocal)
+            {
+                case WebProtocal.HTTP:
+                    remoteFile = new HttpRemoteFile();
+                    break;
+                default: break;
+            }
+            return remoteFile.DownloadFile(filePath);
+        }
+
+
+        public static void UploadFileToServer(byte[] pictureBinary, string source, WebProtocal webProtocal = WebProtocal.HTTP)
+        {
+            RemoteFile remoteFile = null;
+            switch (webProtocal)
+            {
+                case WebProtocal.HTTP:
+                    remoteFile = new HttpRemoteFile();
+                    break;
+                default: break;
+            }
+            remoteFile.UploadFile(pictureBinary, source);
+        }
+        public static void DeleteFileToServer(string filename, WebProtocal webProtocal = WebProtocal.HTTP)
+        {
+            RemoteFile remoteFile = null;
+            switch (webProtocal)
+            {
+                case WebProtocal.HTTP:
+                    remoteFile = new HttpRemoteFile();
+                    break;
+                default: break;
+            }
+            remoteFile.DeleteFile(filename);
+        }
+        //public static List<string> GetFiles(string path, string filter)
+        //{
+        //    FtpWebRequest ftpRequest = (FtpWebRequest)WebRequest.Create(path);
+        //    ftpRequest.Credentials = new NetworkCredential(ftpUserName, ftpPassword);
+        //    ftpRequest.Method = WebRequestMethods.Ftp.ListDirectory;
+
+        //    FtpWebResponse response = (FtpWebResponse)ftpRequest.GetResponse();
+        //    StreamReader streamReader = new StreamReader(response.GetResponseStream());
+
+        //    List<string> results = new List<string>();
+
+        //    string line = streamReader.ReadLine();
+        //    while (!string.IsNullOrEmpty(line))
+        //    {
+        //        if (line.Contains(filter))
+        //        {
+        //            line = streamReader.ReadLine();
+        //            results.Add(line);
+        //        }
+        //        else
+        //        {
+        //            line = streamReader.ReadLine();
+        //        }
+        //    }
+
+        //    streamReader.Close();
+        //    return results;
+        //}
+
+
     }
 }

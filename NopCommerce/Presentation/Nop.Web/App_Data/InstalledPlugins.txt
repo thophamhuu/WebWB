@@ -30,7 +30,7 @@ Order.Ebay
 Affiliate.Ebay
 Worldbuy.Plugin
 Affiliate.Amazon
-StateProvinceWB
+Worldbuy.StateProvinceWB
 Shipping.RateByDistrict
 Order.Amazon
 Payments.CashOnDelivery

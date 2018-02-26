@@ -157,6 +157,7 @@ body {
 .worldbuy-center {
     margin: auto;
     display: block;
+    position:relative;
 }
 
 .worldbuy-header-slider .worldbuy-header-slider-left {
@@ -398,7 +399,7 @@ body {
     cursor: pointer;
     position: absolute;
     right: 10px;
-    bottom:0px;
+    bottom: 0px;
     margin: 0;
     padding: 0;
     width: initial;
@@ -429,33 +430,60 @@ body {
             position: absolute;
             right: -20px;
             top: 7px;
-            cursor:pointer;
-        }
-        .category-page-navigation .sublist li > span {
-            top: 13px;
-        } .category-page-navigation .list li > span i {
-                font-size: 17px;
-                font-style: normal;
-                font-weight: bold;
-            }
-
-                .category-page-navigation .list li > span i.normal {
-                    display: block;
-                }
-
-                .category-page-navigation .list li > span i.collapse {
-                    display: none;
-                }
-
-        .category-page-navigation .list li.open > span i.collapse {
-            display: block;
+            cursor: pointer;
         }
 
-        .category-page-navigation .list li.open > span i.normal {
-            display: none;
-        }
+.category-page-navigation .sublist li > span {
+    top: 13px;
+}
+
+.category-page-navigation .list li > span i {
+    font-size: 17px;
+    font-style: normal;
+    font-weight: bold;
+}
+
+    .category-page-navigation .list li > span i.normal {
+        display: block;
+    }
+
+    .category-page-navigation .list li > span i.collapse {
+        display: none;
+    }
+
+.category-page-navigation .list li.open > span i.collapse {
+    display: block;
+}
+
+.category-page-navigation .list li.open > span i.normal {
+    display: none;
+}
 
 
+.worldbuy-adv{
+    position:relative;
+    z-index:-1;
+}
 
+.worldbuy-adv-left {
+    position: absolute;
+    right: 100%;
+    top:-15px;
+}
 
+.worldbuy-adv-right {
+    position: absolute;
+    left: 100%;
+    top: -15px;
+}
 
+.gallery .picture img {
+    height: 415px;
+    max-width:100%;
+    max-height:100%;
+}
+
+.nivoSlider img{
+    height:450px!important;
+    max-height:100%;
+}

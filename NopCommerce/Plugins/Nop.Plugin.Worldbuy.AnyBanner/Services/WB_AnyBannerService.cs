@@ -32,7 +32,7 @@ namespace Nop.Plugin.Worldbuy.AnyBanner.Services
         {
             var query = (from sm in _AnyBannerRepo.TableNoTracking
                          select sm);
-            if (widgetZone!="")
+            if (widgetZone != "")
             {
                 query = query.Where(sm => sm.WidgetZone.ToLower() == widgetZone.ToLower());
             }
@@ -45,7 +45,7 @@ namespace Nop.Plugin.Worldbuy.AnyBanner.Services
                 Id = sm.Id,
                 Name = sm.Name,
                 WidgetZone = sm.WidgetZone,
-                IsActived=sm.IsActived
+                IsActived = sm.IsActived
             }).ToList();
             if (result != null)
             {
@@ -58,17 +58,9 @@ namespace Nop.Plugin.Worldbuy.AnyBanner.Services
                     {
                         queryItems = queryItems.Where(smi => smi.IsActived == isActived.Value);
                     }
-                    x.Items = queryItems.OrderBy(smi => smi.Order).Select(smi => new WB_AnyBannerItemModel
-                    {
-                        Id = smi.Id,
-                        BannerID = smi.BannerID,
-                        Title = smi.Title,
-                        Url = smi.Url,
-                        Alt = smi.Alt,
-                        IsActived = smi.IsActived,
-                        ImageUrl = smi.ImageUrl,
-                        Order = smi.Order
-                    }).ToList();
+                    var items = queryItems.OrderBy(smi => smi.Order).ToList();
+                    if (items != null)
+                        x.Items = items.Select(smi => smi.ToModel()).ToList();
                 });
             }
             return result;
@@ -97,7 +89,7 @@ namespace Nop.Plugin.Worldbuy.AnyBanner.Services
                                     Title = smi.Title,
                                     Url = smi.Url,
                                     IsActived = smi.IsActived,
-                                    ImageUrl = smi.ImageUrl,
+                                    PictureId = smi.PictureId,
                                 }).ToList();
             }
             return result;

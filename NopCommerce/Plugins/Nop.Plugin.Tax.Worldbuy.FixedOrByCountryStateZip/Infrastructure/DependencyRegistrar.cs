@@ -46,9 +46,9 @@ namespace Nop.Plugin.Tax.Worldbuy.FixedOrByCountryStateZip.Infrastructure
                .As<IRepository<WB_TaxCategoryMapping>>()
                .WithParameter(ResolvedParameter.ForNamed<IDbContext>("nop_object_context_tax_worldbuy_country_state_zip"))
                .InstancePerLifetimeScope();
-            builder.RegisterType<WB_TaxService>()
-                .As<ITaxService>()
-                .InstancePerLifetimeScope();
+            //builder.RegisterType<WB_TaxService>()
+            //    .As<ITaxService>()
+            //    .InstancePerLifetimeScope();
         }
 
         /// <summary>

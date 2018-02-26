@@ -49,10 +49,11 @@
     {
         <div class="form-group">
             <div class="col-md-3">
-                <div class="label-wrapper"><label class="control-label" for="Title" title="">@T("Nop.Plugin.Worldbuy.AnyBanner.Item.ImageUrl")</label></div>
+                @Html.NopLabelFor(model => model.PictureId)
             </div>
-            <div class="col-md-4">
-                <input name="file" multiple type="file" class="form-control" />
+            <div class="col-md-9">
+                @Html.NopEditorFor(model => model.PictureId)
+                @Html.ValidationMessageFor(model => model.PictureId)
             </div>
         </div>
     }

@@ -14,6 +14,7 @@ using Nop.Services.Configuration;
 using Nop.Services.Events;
 using Nop.Services.Logging;
 using Nop.Services.Seo;
+using System.Net;
 
 namespace Nop.Services.Media
 {
@@ -25,7 +26,6 @@ namespace Nop.Services.Media
         #region Const
 
         private const int MULTIPLE_THUMB_DIRECTORIES_LENGTH = 3;
-
         #endregion
 
         #region Fields
@@ -107,7 +107,7 @@ namespace Nop.Services.Media
                     {
                         // landscape or square
                         width = targetSize;
-                        height = originalSize.Height * (targetSize / (float) originalSize.Width);
+                        height = originalSize.Height * (targetSize / (float)originalSize.Width);
                     }
                     break;
                 case ResizeType.Width:
@@ -174,9 +174,14 @@ namespace Nop.Services.Media
             string lastPart = GetFileExtensionFromMimeType(mimeType);
             string fileName = string.Format("{0}_0.{1}", pictureId.ToString("0000000"), lastPart);
             var filePath = GetPictureLocalPath(fileName);
-            if (!File.Exists(filePath))
+            try
+            {
+                return CommonHelper.DownloadFileFromServer(filePath);
+            }
+            catch
+            {
                 return new byte[0];
-            return File.ReadAllBytes(filePath);
+            }
         }
 
         /// <summary>
@@ -189,7 +194,10 @@ namespace Nop.Services.Media
         {
             string lastPart = GetFileExtensionFromMimeType(mimeType);
             string fileName = string.Format("{0}_0.{1}", pictureId.ToString("0000000"), lastPart);
-            File.WriteAllBytes(GetPictureLocalPath(fileName), pictureBinary);
+            fileName = GetPictureLocalPath(fileName, true);// CommonHelper.MapPathServer(fileName);
+            CommonHelper.UploadFileToServer(pictureBinary, fileName);
+            //CommonHelper.UploadFileToHTTP(CommonHelper.MapPathFTP("/content/images/") + fileName, pictureBinary);
+            //File.WriteAllBytes(GetPictureLocalPath(fileName), pictureBinary);
         }
 
         /// <summary>
@@ -203,10 +211,11 @@ namespace Nop.Services.Media
 
             string lastPart = GetFileExtensionFromMimeType(picture.MimeType);
             string fileName = string.Format("{0}_0.{1}", picture.Id.ToString("0000000"), lastPart);
-            string filePath = GetPictureLocalPath(fileName);
-            if (File.Exists(filePath))
+            string filePath = GetPictureLocalPath(fileName, true);
+            if (CommonHelper.CheckIfFileExistsOnServer(filePath))
             {
-                File.Delete(filePath);
+                CommonHelper.DeleteFileToServer(filePath);
+                //File.Delete(filePath);
             }
         }
 
@@ -216,16 +225,36 @@ namespace Nop.Services.Media
         /// <param name="picture">Picture</param>
         protected virtual void DeletePictureThumbs(Picture picture)
         {
-            string filter = string.Format("{0}*.*", picture.Id.ToString("0000000"));
-            var thumbDirectoryPath = CommonHelper.MapPath("~/content/images/thumbs");
-            string[] currentFiles = System.IO.Directory.GetFiles(thumbDirectoryPath, filter, SearchOption.AllDirectories);
+            string filter = string.Format("{0}", picture.Id.ToString("0000000"));
+            var thumbDirectoryPath = CommonHelper.MapPathServer("~/content/images/thumbs", true);
+            //string[] currentFiles = System.IO.Directory.GetFiles(thumbDirectoryPath, filter, SearchOption.AllDirectories);
+            List<string> currentFiles = GetThumbs(picture);
             foreach (string currentFileName in currentFiles)
             {
-                var thumbFilePath = GetThumbLocalPath(currentFileName);
-                File.Delete(thumbFilePath);
+                //                var thumbFilePath = GetThumbLocalPath(currentFileName);
+                //File.Delete(thumbFilePath);
+                if (CommonHelper.CheckIfFileExistsOnServer(currentFileName))
+                {
+                    CommonHelper.DeleteFileToServer(currentFileName);
+                }
             }
         }
+        protected virtual List<string> GetThumbs(Picture picture)
+        {
+            List<string> thumbs = new List<string>();
+            var sizeThumbs = String.IsNullOrEmpty(picture.SizeThumbs) ? null : picture.SizeThumbs.Split(',').Select(x => Int32.Parse(x)).ToArray();
+            if (sizeThumbs != null)
+            {
+                foreach (var targetSize in sizeThumbs)
+                {
+                    var thumb = GetThumbLocalPath(picture, targetSize, false, true);
+                    thumbs.Add(thumb);
+                }
 
+            }
+
+            return thumbs;
+        }
         /// <summary>
         /// Get picture (thumb) local path
         /// </summary>
@@ -233,7 +262,7 @@ namespace Nop.Services.Media
         /// <returns>Local picture thumb path</returns>
         protected virtual string GetThumbLocalPath(string thumbFileName)
         {
-            var thumbsDirectoryPath = CommonHelper.MapPath("~/content/images/thumbs");
+            var thumbsDirectoryPath = CommonHelper.MapPathServer("~/content/images/thumbs", false);
             if (_mediaSettings.MultipleThumbDirectories)
             {
                 //get the first two letters of the file name
@@ -248,10 +277,36 @@ namespace Nop.Services.Media
                     }
                 }
             }
-            var thumbFilePath = Path.Combine(thumbsDirectoryPath, thumbFileName);
+            //var thumbFilePath = Path.Combine(thumbsDirectoryPath, thumbFileName);
+            var thumbFilePath = thumbsDirectoryPath + "/" + thumbFileName;
             return thumbFilePath;
         }
-
+        /// <summary>
+        /// Get picture (thumb) local path
+        /// </summary>
+        /// <param name="thumbFileName">Filename</param>
+        /// <returns>Local picture thumb path</returns>
+        protected virtual string GetThumbLocalPath(string thumbFileName, bool isProcess = false)
+        {
+            var thumbsDirectoryPath = CommonHelper.MapPathServer("~/content/images/thumbs", isProcess);
+            if (_mediaSettings.MultipleThumbDirectories)
+            {
+                //get the first two letters of the file name
+                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(thumbFileName);
+                if (fileNameWithoutExtension != null && fileNameWithoutExtension.Length > MULTIPLE_THUMB_DIRECTORIES_LENGTH)
+                {
+                    var subDirectoryName = fileNameWithoutExtension.Substring(0, MULTIPLE_THUMB_DIRECTORIES_LENGTH);
+                    thumbsDirectoryPath = Path.Combine(thumbsDirectoryPath, subDirectoryName);
+                    if (!System.IO.Directory.Exists(thumbsDirectoryPath))
+                    {
+                        System.IO.Directory.CreateDirectory(thumbsDirectoryPath);
+                    }
+                }
+            }
+            //var thumbFilePath = Path.Combine(thumbsDirectoryPath, thumbFileName);
+            var thumbFilePath = thumbsDirectoryPath + "/" + thumbFileName;
+            return thumbFilePath;
+        }
         /// <summary>
         /// Get picture (thumb) URL 
         /// </summary>
@@ -260,10 +315,9 @@ namespace Nop.Services.Media
         /// <returns>Local picture thumb path</returns>
         protected virtual string GetThumbUrl(string thumbFileName, string storeLocation = null)
         {
-            storeLocation = !String.IsNullOrEmpty(storeLocation)
-                                    ? storeLocation
-                                    : _webHelper.GetStoreLocation();
-            var url = storeLocation + "content/images/thumbs/";
+            var url = !String.IsNullOrEmpty(storeLocation)
+                                    ? storeLocation + "/content/images/thumbs/"
+                                    : CommonHelper.MapPathServer("/content/images/thumbs/");
 
             if (_mediaSettings.MultipleThumbDirectories)
             {
@@ -287,9 +341,14 @@ namespace Nop.Services.Media
         /// <returns>Local picture path</returns>
         protected virtual string GetPictureLocalPath(string fileName)
         {
-            return Path.Combine(CommonHelper.MapPath("~/content/images/"), fileName);
+            return CommonHelper.MapPathServer("/content/images/" + fileName);
+            //return Path.Combine(CommonHelper.MapPath("~/content/images/"), fileName);
         }
-
+        protected virtual string GetPictureLocalPath(string fileName, bool isProcess)
+        {
+            return CommonHelper.MapPathServer("/content/images/" + fileName, isProcess);
+            //return Path.Combine(CommonHelper.MapPath("~/content/images/"), fileName);
+        }
         /// <summary>
         /// Gets the loaded picture binary depending on picture storage settings
         /// </summary>
@@ -315,7 +374,7 @@ namespace Nop.Services.Media
         /// <returns>Result</returns>
         protected virtual bool GeneratedThumbExists(string thumbFilePath, string thumbFileName)
         {
-            return File.Exists(thumbFilePath);
+            return CommonHelper.CheckIfFileExistsOnServer(thumbFilePath);
         }
 
         /// <summary>
@@ -327,7 +386,8 @@ namespace Nop.Services.Media
         /// <param name="binary">Picture binary</param>
         protected virtual void SaveThumb(string thumbFilePath, string thumbFileName, string mimeType, byte[] binary)
         {
-            File.WriteAllBytes(thumbFilePath, binary);
+            CommonHelper.UploadFileToServer(binary, thumbFilePath);
+            //File.WriteAllBytes(thumbFilePath, binary);
         }
 
         #endregion
@@ -377,7 +437,7 @@ namespace Nop.Services.Media
                     break;
             }
             string filePath = GetPictureLocalPath(defaultImageFileName);
-            if (!File.Exists(filePath))
+            if (!CommonHelper.CheckIfFileExistsOnServer(filePath))
             {
                 return "";
             }
@@ -386,9 +446,8 @@ namespace Nop.Services.Media
             if (targetSize == 0)
             {
                 string url = (!String.IsNullOrEmpty(storeLocation)
-                                 ? storeLocation
-                                 : _webHelper.GetStoreLocation())
-                                 + "content/images/" + defaultImageFileName;
+                                 ? storeLocation + "/content/images/" + defaultImageFileName
+                                 : CommonHelper.MapPathServer("/content/images/" + defaultImageFileName));
                 return url;
             }
             else
@@ -401,20 +460,26 @@ namespace Nop.Services.Media
                 var thumbFilePath = GetThumbLocalPath(thumbFileName);
                 if (!GeneratedThumbExists(thumbFilePath, thumbFileName))
                 {
-                    using (var b = new Bitmap(filePath))
+                    using (WebClient wc = new WebClient())
                     {
-                        using (var destStream = new MemoryStream())
+                        using (Stream s = wc.OpenRead(filePath))
                         {
-                            var newSize = CalculateDimensions(b.Size, targetSize);
-                            ImageBuilder.Current.Build(b, destStream, new ResizeSettings
+                            using (var b = new Bitmap(s))
                             {
-                                Width = newSize.Width,
-                                Height = newSize.Height,
-                                Scale = ScaleMode.Both,
-                                Quality = _mediaSettings.DefaultImageQuality
-                            });
-                            var destBinary = destStream.ToArray();
-                            SaveThumb(thumbFilePath, thumbFileName, "", destBinary);
+                                using (var destStream = new MemoryStream())
+                                {
+                                    var newSize = CalculateDimensions(b.Size, targetSize);
+                                    ImageBuilder.Current.Build(b, destStream, new ResizeSettings
+                                    {
+                                        Width = newSize.Width,
+                                        Height = newSize.Height,
+                                        Scale = ScaleMode.Both,
+                                        Quality = _mediaSettings.DefaultImageQuality
+                                    });
+                                    var destBinary = destStream.ToArray();
+                                    SaveThumb(thumbFilePath, thumbFileName, "", destBinary);
+                                }
+                            }
                         }
                     }
                 }
@@ -458,35 +523,37 @@ namespace Nop.Services.Media
             PictureType defaultPictureType = PictureType.Entity)
         {
             string url = string.Empty;
-            byte[] pictureBinary = null;
-            if (picture != null)
-                pictureBinary = LoadPictureBinary(picture);
-            if (picture == null || pictureBinary == null || pictureBinary.Length == 0)
-            {
-                if (showDefaultPicture)
-                {
-                    url = GetDefaultPictureUrl(targetSize, defaultPictureType, storeLocation);
-                }
-                return url;
-            }
+            if (picture == null)
+                return "/Content/Images/default-image.png";
+            //byte[] pictureBinary = null;
+            //if (picture != null)
+            //    pictureBinary = LoadPictureBinary(picture);
+            //if (picture == null || pictureBinary == null || pictureBinary.Length == 0)
+            //{
+            //    if (showDefaultPicture)
+            //    {
+            //        url = GetDefaultPictureUrl(targetSize, defaultPictureType, storeLocation);
+            //    }
+            //    return url;
+            //}
 
             if (picture.IsNew)
             {
-                DeletePictureThumbs(picture);
+                //DeletePictureThumbs(picture);
 
                 //we do not validate picture binary here to ensure that no exception ("Parameter is not valid") will be thrown
-                picture = UpdatePicture(picture.Id,
-                    pictureBinary,
-                    picture.MimeType,
-                    picture.SeoFilename,
-                    picture.AltAttribute,
-                    picture.TitleAttribute,
-                    false,
-                    false);
+                //picture = UpdatePicture(picture.Id,
+                //    pictureBinary,
+                //    picture.MimeType,
+                //    picture.SeoFilename,
+                //    picture.AltAttribute,
+                //    picture.TitleAttribute,
+                //    false,
+                //    false);
             }
 
             var seoFileName = picture.SeoFilename; // = GetPictureSeName(picture.SeoFilename); //just for sure
-            
+
             string lastPart = GetFileExtensionFromMimeType(picture.MimeType);
             string thumbFileName;
             if (targetSize == 0)
@@ -505,68 +572,68 @@ namespace Nop.Services.Media
 
             //the named mutex helps to avoid creating the same files in different threads,
             //and does not decrease performance significantly, because the code is blocked only for the specific file.
-            using (var mutex = new Mutex(false, thumbFileName))
-            {
-                if(!GeneratedThumbExists(thumbFilePath, thumbFileName))
-                { 
-                    mutex.WaitOne();
+            //using (var mutex = new Mutex(false, thumbFileName))
+            //{
+            //    if (!GeneratedThumbExists(thumbFilePath, thumbFileName))
+            //    {
+            //        mutex.WaitOne();
 
-                    //check, if the file was created, while we were waiting for the release of the mutex.
-                    if (!GeneratedThumbExists(thumbFilePath, thumbFileName))
-                    {
-                        byte[] pictureBinaryResized;
+            //        //check, if the file was created, while we were waiting for the release of the mutex.
+            //        if (!GeneratedThumbExists(thumbFilePath, thumbFileName))
+            //        {
+            //            byte[] pictureBinaryResized;
 
-                        //resizing required
-                        if (targetSize != 0)
-                        {
-                            using (var stream = new MemoryStream(pictureBinary))
-                            {
-                                Bitmap b = null;
-                                try
-                                {
-                                    //try-catch to ensure that picture binary is really OK. Otherwise, we can get "Parameter is not valid" exception if binary is corrupted for some reasons
-                                    b = new Bitmap(stream);
-                                }
-                                catch (ArgumentException exc)
-                                {
-                                    _logger.Error(string.Format("Error generating picture thumb. ID={0}", picture.Id),
-                                        exc);
-                                }
+            //            //resizing required
+            //            if (targetSize != 0)
+            //            {
+            //                using (var stream = new MemoryStream(pictureBinary))
+            //                {
+            //                    Bitmap b = null;
+            //                    try
+            //                    {
+            //                        //try-catch to ensure that picture binary is really OK. Otherwise, we can get "Parameter is not valid" exception if binary is corrupted for some reasons
+            //                        b = new Bitmap(stream);
+            //                    }
+            //                    catch (ArgumentException exc)
+            //                    {
+            //                        _logger.Error(string.Format("Error generating picture thumb. ID={0}", picture.Id),
+            //                            exc);
+            //                    }
 
-                                if (b == null)
-                                {
-                                    //bitmap could not be loaded for some reasons
-                                    return url;
-                                }
+            //                    if (b == null)
+            //                    {
+            //                        //bitmap could not be loaded for some reasons
+            //                        return url;
+            //                    }
 
-                                using (var destStream = new MemoryStream())
-                                {
-                                    var newSize = CalculateDimensions(b.Size, targetSize);
-                                    ImageBuilder.Current.Build(b, destStream, new ResizeSettings
-                                    {
-                                        Width = newSize.Width,
-                                        Height = newSize.Height,
-                                        Scale = ScaleMode.Both,
-                                        Quality = _mediaSettings.DefaultImageQuality
-                                    });
-                                    pictureBinaryResized = destStream.ToArray();
-                                    b.Dispose();
-                                }
-                            }
-                        }
-                        else
-                        {
-                            //create a copy of pictureBinary
-                            pictureBinaryResized = pictureBinary.ToArray();
-                        }
+            //                    using (var destStream = new MemoryStream())
+            //                    {
+            //                        var newSize = CalculateDimensions(b.Size, targetSize);
+            //                        ImageBuilder.Current.Build(b, destStream, new ResizeSettings
+            //                        {
+            //                            Width = newSize.Width,
+            //                            Height = newSize.Height,
+            //                            Scale = ScaleMode.Both,
+            //                            Quality = _mediaSettings.DefaultImageQuality
+            //                        });
+            //                        pictureBinaryResized = destStream.ToArray();
+            //                        b.Dispose();
+            //                    }
+            //                }
+            //            }
+            //            else
+            //            {
+            //                //create a copy of pictureBinary
+            //                pictureBinaryResized = pictureBinary.ToArray();
+            //            }
 
-                        SaveThumb(thumbFilePath, thumbFileName, picture.MimeType, pictureBinaryResized);
-                    }
-                    
-                    mutex.ReleaseMutex();
-                }
-                
-            }
+            //            SaveThumb(thumbFilePath, thumbFileName, picture.MimeType, pictureBinaryResized);
+            //        }
+
+            //        mutex.ReleaseMutex();
+            //    }
+
+            //}
             url = GetThumbUrl(thumbFileName, storeLocation);
             return url;
         }
@@ -578,13 +645,13 @@ namespace Nop.Services.Media
         /// <param name="targetSize">The target picture size (longest side)</param>
         /// <param name="showDefaultPicture">A value indicating whether the default picture is shown</param>
         /// <returns></returns>
-        public virtual string GetThumbLocalPath(Picture picture, int targetSize = 0, bool showDefaultPicture = true)
+        public virtual string GetThumbLocalPath(Picture picture, int targetSize = 0, bool showDefaultPicture = true, bool isProcess = false)
         {
             string url = GetPictureUrl(picture, targetSize, showDefaultPicture);
             if (String.IsNullOrEmpty(url))
                 return String.Empty;
 
-            return GetThumbLocalPath(Path.GetFileName(url));
+            return GetThumbLocalPath(Path.GetFileName(url), isProcess);
         }
 
         #endregion
@@ -641,7 +708,7 @@ namespace Nop.Services.Media
             var pics = new PagedList<Picture>(query, pageIndex, pageSize);
             return pics;
         }
-        
+
         /// <summary>
         /// Gets pictures by product identifier
         /// </summary>
@@ -698,11 +765,16 @@ namespace Nop.Services.Media
                 AltAttribute = altAttribute,
                 TitleAttribute = titleAttribute,
                 IsNew = isNew,
+                SizeThumbs = "0,75,100"
             };
             _pictureRepository.Insert(picture);
 
             if (!this.StoreInDb)
+            {
                 SavePictureInFile(picture.Id, pictureBinary, mimeType);
+                CreateThumbs(picture, new List<int> { 0, 100 }.ToArray());
+            }
+
 
             //event notification
             _eventPublisher.EntityInserted(picture);
@@ -739,8 +811,8 @@ namespace Nop.Services.Media
                 return null;
 
             //delete old thumbs if a picture has been changed
-            if (seoFilename != picture.SeoFilename)
-                DeletePictureThumbs(picture);
+            //if (seoFilename != picture.SeoFilename)
+            //    DeletePictureThumbs(picture);
 
             picture.PictureBinary = this.StoreInDb ? pictureBinary : new byte[0];
             picture.MimeType = mimeType;
@@ -759,7 +831,94 @@ namespace Nop.Services.Media
 
             return picture;
         }
+        public void CreateThumbs(Picture picture, int[] sizeThumbs)
+        {
+            var picThumbs = string.IsNullOrEmpty(picture.SizeThumbs) ? new List<string>() : picture.SizeThumbs.Split(',').ToList();
 
+            foreach (var targetSize in sizeThumbs)
+            {
+                var seoFileName = picture.SeoFilename; // = GetPictureSeName(picture.SeoFilename); //just for sure
+
+                string lastPart = GetFileExtensionFromMimeType(picture.MimeType);
+                string thumbFileName;
+                if (targetSize == 0)
+                {
+                    thumbFileName = !String.IsNullOrEmpty(seoFileName)
+                        ? string.Format("{0}_{1}.{2}", picture.Id.ToString("0000000"), seoFileName, lastPart)
+                        : string.Format("{0}.{1}", picture.Id.ToString("0000000"), lastPart);
+                }
+                else
+                {
+                    thumbFileName = !String.IsNullOrEmpty(seoFileName)
+                        ? string.Format("{0}_{1}_{2}.{3}", picture.Id.ToString("0000000"), seoFileName, targetSize, lastPart)
+                        : string.Format("{0}_{1}.{2}", picture.Id.ToString("0000000"), targetSize, lastPart);
+                }
+                string thumbFilePath = GetThumbLocalPath(thumbFileName, true);
+                byte[] pictureBinary = null;
+                if (picture != null)
+                    pictureBinary = LoadPictureBinary(picture);
+                if (pictureBinary != null && pictureBinary.Length > 0)
+                {
+                    byte[] pictureBinaryResized;
+
+                    //resizing required
+                    if (targetSize != 0)
+                    {
+                        using (var stream = new MemoryStream(pictureBinary))
+                        {
+                            Bitmap b = null;
+                            try
+                            {
+                                //try-catch to ensure that picture binary is really OK. Otherwise, we can get "Parameter is not valid" exception if binary is corrupted for some reasons
+                                b = new Bitmap(stream);
+                            }
+                            catch (ArgumentException exc)
+                            {
+                                _logger.Error(string.Format("Error generating picture thumb. ID={0}", picture.Id),
+                                    exc);
+                            }
+
+                            if (b == null)
+                            {
+                                //bitmap could not be loaded for some reasons
+                                return;
+                            }
+
+                            using (var destStream = new MemoryStream())
+                            {
+                                var newSize = CalculateDimensions(b.Size, targetSize);
+                                ImageBuilder.Current.Build(b, destStream, new ResizeSettings
+                                {
+                                    Width = newSize.Width,
+                                    Height = newSize.Height,
+                                    Scale = ScaleMode.Both,
+                                    Quality = _mediaSettings.DefaultImageQuality
+                                });
+                                pictureBinaryResized = destStream.ToArray();
+                                b.Dispose();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        //create a copy of pictureBinary
+                        pictureBinaryResized = pictureBinary.ToArray();
+                    }
+                    try
+                    {
+                        SaveThumb(thumbFilePath, thumbFileName, picture.MimeType, pictureBinaryResized);
+                        if (!picThumbs.Any(x => x.ToLower() == targetSize.ToString().ToLower()))
+                        {
+                            picThumbs.Add(targetSize.ToString().ToLower());
+                        }
+                    }
+                    catch { }
+                }
+                picture.SizeThumbs = string.Join(",", picThumbs);
+                _pictureRepository.Update(picture);
+            }
+
+        }
         /// <summary>
         /// Updates a SEO filename of a picture
         /// </summary>
@@ -811,7 +970,7 @@ namespace Nop.Services.Media
         /// <summary>
         /// Helper class for making pictures hashes from DB
         /// </summary>
-        private class HashItem: IComparable, IComparable<HashItem>
+        private class HashItem : IComparable, IComparable<HashItem>
         {
             public int PictureId { get; set; }
             public byte[] Hash { get; set; }
@@ -835,7 +994,7 @@ namespace Nop.Services.Media
         public IDictionary<int, string> GetPicturesHash(int[] picturesIds)
         {
             var supportedLengthOfBinaryHash = _dataProvider.SupportedLengthOfBinaryHash();
-            if(supportedLengthOfBinaryHash == 0 || !picturesIds.Any())
+            if (supportedLengthOfBinaryHash == 0 || !picturesIds.Any())
                 return new Dictionary<int, string>();
 
             const string strCommand = "SELECT [Id] as [PictureId], HASHBYTES('sha1', substring([PictureBinary], 0, {0})) as [Hash] FROM [Picture] where id in ({1})";

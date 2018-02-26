@@ -85,42 +85,42 @@ namespace Nop.Web.Factories
 
         #endregion
 
-		#region Ctor
+        #region Ctor
 
-        public ShoppingCartModelFactory(IAddressModelFactory addressModelFactory, 
+        public ShoppingCartModelFactory(IAddressModelFactory addressModelFactory,
             IStoreContext storeContext,
             IWorkContext workContext,
-            IShoppingCartService shoppingCartService, 
+            IShoppingCartService shoppingCartService,
             IPictureService pictureService,
-            ILocalizationService localizationService, 
+            ILocalizationService localizationService,
             IProductAttributeFormatter productAttributeFormatter,
             IProductAttributeParser productAttributeParser,
-            ITaxService taxService, ICurrencyService currencyService, 
+            ITaxService taxService, ICurrencyService currencyService,
             IPriceCalculationService priceCalculationService,
             IPriceFormatter priceFormatter,
             ICheckoutAttributeParser checkoutAttributeParser,
-            ICheckoutAttributeFormatter checkoutAttributeFormatter, 
+            ICheckoutAttributeFormatter checkoutAttributeFormatter,
             IOrderProcessingService orderProcessingService,
             IDiscountService discountService,
             ICountryService countryService,
             IStateProvinceService stateProvinceService,
             IShippingService shippingService,
             IOrderTotalCalculationService orderTotalCalculationService,
-            ICheckoutAttributeService checkoutAttributeService, 
+            ICheckoutAttributeService checkoutAttributeService,
             IPaymentService paymentService,
-            IPermissionService permissionService, 
+            IPermissionService permissionService,
             IDownloadService downloadService,
             ICacheManager cacheManager,
-            IWebHelper webHelper, 
+            IWebHelper webHelper,
             IGenericAttributeService genericAttributeService,
             HttpContextBase httpContext,
             MediaSettings mediaSettings,
             ShoppingCartSettings shoppingCartSettings,
-            CatalogSettings catalogSettings, 
+            CatalogSettings catalogSettings,
             OrderSettings orderSettings,
-            ShippingSettings shippingSettings, 
+            ShippingSettings shippingSettings,
             TaxSettings taxSettings,
-            CaptchaSettings captchaSettings, 
+            CaptchaSettings captchaSettings,
             AddressSettings addressSettings,
             RewardPointsSettings rewardPointsSettings,
             CustomerSettings customerSettings)
@@ -289,7 +289,7 @@ namespace Nop.Web.Factories
                                     attributeModel.SelectedYear = selectedDate.Year;
                                 }
                             }
-                            
+
                         }
                         break;
                     case AttributeControlType.FileUpload:
@@ -353,7 +353,7 @@ namespace Nop.Web.Factories
                     ? _workContext.CurrentCustomer.ShippingAddress.StateProvinceId
                     : model.StateProvinceId;
                 var states = defaultEstimateCountryId.HasValue
-                    ? _stateProvinceService.GetStateProvincesByCountryId(defaultEstimateCountryId.Value,_workContext.WorkingLanguage.Id).ToList()
+                    ? _stateProvinceService.GetStateProvincesByCountryId(defaultEstimateCountryId.Value, _workContext.WorkingLanguage.Id).ToList()
                     : new List<StateProvince>();
                 if (states.Any())
                 {
@@ -422,7 +422,7 @@ namespace Nop.Web.Factories
 
             //disable removal?
             //1. do other items require this one?
-            cartItemModel.DisableRemoval = cart.Any( item => item.Product.RequireOtherProducts && item.Product.ParseRequiredProductIds().Contains(sci.ProductId));
+            cartItemModel.DisableRemoval = cart.Any(item => item.Product.RequireOtherProducts && item.Product.ParseRequiredProductIds().Contains(sci.ProductId));
 
             //allowed quantities
             var allowedQuantities = sci.Product.ParseAllowedQuantities();
@@ -480,7 +480,7 @@ namespace Nop.Web.Factories
                 int? maximumDiscountQty;
                 decimal shoppingCartItemDiscountBase;
                 decimal taxRate;
-                decimal shoppingCartItemSubTotalWithDiscountBase = _taxService.GetProductPrice(sci.Product, _priceCalculationService.GetSubTotal(sci, true, out shoppingCartItemDiscountBase, out scDiscounts, out maximumDiscountQty), out taxRate);
+                decimal shoppingCartItemSubTotalWithDiscountBase = _taxService.GetProductPrice(sci.Product, _priceCalculationService.GetSubTotal(sci, true, out shoppingCartItemDiscountBase, out scDiscounts, out maximumDiscountQty), out taxRate, sci.Quantity);
                 decimal shoppingCartItemSubTotalWithDiscount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartItemSubTotalWithDiscountBase, _workContext.WorkingCurrency);
                 cartItemModel.SubTotal = _priceFormatter.FormatPrice(shoppingCartItemSubTotalWithDiscount);
                 cartItemModel.MaximumDiscountedQty = maximumDiscountQty;
@@ -687,7 +687,7 @@ namespace Nop.Web.Factories
             {
                 model.IsShippable = true;
 
-                var pickupPoint = _workContext.CurrentCustomer.GetAttribute<PickupPoint>(SystemCustomerAttributeNames.SelectedPickupPoint,_storeContext.CurrentStore.Id);
+                var pickupPoint = _workContext.CurrentCustomer.GetAttribute<PickupPoint>(SystemCustomerAttributeNames.SelectedPickupPoint, _storeContext.CurrentStore.Id);
                 model.SelectedPickUpInStore = _shippingSettings.AllowPickUpInStore && pickupPoint != null;
                 if (!model.SelectedPickUpInStore)
                 {
@@ -751,7 +751,7 @@ namespace Nop.Web.Factories
         public virtual PictureModel PrepareCartItemPictureModel(ShoppingCartItem sci, int pictureSize, bool showDefaultPicture, string productName)
         {
             var pictureCacheKey = string.Format(ModelCacheEventConsumer.CART_PICTURE_MODEL_KEY, sci.Id, pictureSize, true, _workContext.WorkingLanguage.Id, _webHelper.IsCurrentConnectionSecured(), _storeContext.CurrentStore.Id);
-            var model = _cacheManager.Get(pictureCacheKey, 
+            var model = _cacheManager.Get(pictureCacheKey,
                 //as we cache per user (shopping cart item identifier)
                 //let's cache just for 3 minutes
                 3, () =>
@@ -779,9 +779,9 @@ namespace Nop.Web.Factories
         /// <param name="setEstimateShippingDefaultAddress">Whether to use customer default shipping address for estimating</param>
         /// <param name="prepareAndDisplayOrderReviewData">Whether to prepare and display order review data</param>
         /// <returns>Shopping cart model</returns>
-        public virtual ShoppingCartModel PrepareShoppingCartModel(ShoppingCartModel model, 
-            IList<ShoppingCartItem> cart, bool isEditable = true, 
-            bool validateCheckoutAttributes = false, 
+        public virtual ShoppingCartModel PrepareShoppingCartModel(ShoppingCartModel model,
+            IList<ShoppingCartItem> cart, bool isEditable = true,
+            bool validateCheckoutAttributes = false,
             bool prepareEstimateShippingIfEnabled = true, bool setEstimateShippingDefaultAddress = true,
             bool prepareAndDisplayOrderReviewData = false)
         {
@@ -836,7 +836,7 @@ namespace Nop.Web.Factories
 
             //checkout attributes
             model.CheckoutAttributes = PrepareCheckoutAttributeModels(cart);
-    
+
             //estimate shipping
             if (prepareEstimateShippingIfEnabled)
             {
@@ -849,7 +849,7 @@ namespace Nop.Web.Factories
                 var cartItemModel = PrepareShoppingCartItemModel(cart, sci);
                 model.Items.Add(cartItemModel);
             }
-            
+
             #region Payment methods
 
             //all payment methods (do not filter by country here as it could be not specified yet)
@@ -922,12 +922,12 @@ namespace Nop.Web.Factories
             model.CustomerFullname = customer.GetFullName();
             model.ShowProductImages = _shoppingCartSettings.ShowProductImagesOnWishList;
             model.ShowSku = _catalogSettings.ShowSkuOnProductDetailsPage;
-            
+
             //cart warnings
             var cartWarnings = _shoppingCartService.GetShoppingCartWarnings(cart, "", false);
             foreach (var warning in cartWarnings)
                 model.Warnings.Add(warning);
-            
+
             //cart items
             foreach (var sci in cart)
             {
@@ -1041,7 +1041,7 @@ namespace Nop.Web.Factories
                     }
                 }
             }
-            
+
             return model;
         }
 

@@ -33,6 +33,7 @@ using Nop.Web.Framework.Security.Captcha;
 using Nop.Web.Infrastructure.Cache;
 using Nop.Web.Models.Media;
 using Nop.Web.Models.ShoppingCart;
+using Nop.Core.Infrastructure;
 
 namespace Nop.Web.Controllers
 {
@@ -735,14 +736,14 @@ namespace Nop.Web.Controllers
                     .ToList();
                 updatecartitem = cart.FirstOrDefault(x => x.Id == updatecartitemid);
                 //not found? let's ignore it. in this case we'll add a new item
-                //if (updatecartitem == null)
-                //{
-                //    return Json(new
-                //    {
-                //        success = false,
-                //        message = "No shopping cart item found to update"
-                //    });
-                //}
+                if (updatecartitem == null)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "No shopping cart item found to update"
+                    });
+                }
                 //is it this product?
                 if (updatecartitem != null && product.Id != updatecartitem.ProductId)
                 {
@@ -836,7 +837,6 @@ namespace Nop.Web.Controllers
                     _shoppingCartService.DeleteShoppingCartItem(otherCartItemWithSameParameters);
                 }
             }
-
             #region Return result
 
             if (addToCartWarnings.Any())
@@ -849,7 +849,6 @@ namespace Nop.Web.Controllers
                     message = addToCartWarnings.ToArray()
                 });
             }
-
             //added to the cart/wishlist
             switch (cartType)
             {
@@ -866,7 +865,6 @@ namespace Nop.Web.Controllers
                                 redirect = Url.RouteUrl("Wishlist"),
                             });
                         }
-
                         //display notification message and update appropriate blocks
                         var updatetopwishlistsectionhtml = string.Format(_localizationService.GetResource("Wishlist.HeaderQuantity"),
                         _workContext.CurrentCustomer.ShoppingCartItems
@@ -914,7 +912,7 @@ namespace Nop.Web.Controllers
                             success = true,
                             message = string.Format(_localizationService.GetResource("Products.ProductHasBeenAddedToTheCart.Link"), Url.RouteUrl("ShoppingCart")),
                             updatetopcartsectionhtml = updatetopcartsectionhtml,
-                            updateflyoutcartsectionhtml = updateflyoutcartsectionhtml
+                            updateflyoutcartsectionhtml = "",//updateflyoutcartsectionhtml
                         });
                     }
             }
@@ -1337,7 +1335,56 @@ namespace Nop.Web.Controllers
                         if (!sciModel.Warnings.Contains(w))
                             sciModel.Warnings.Add(w);
             }
-            return View(model);
+            return RedirectToAction("Cart");// View(model);
+        }
+
+        [ValidateInput(false)]
+        [HttpPost, ActionName("Cart")]
+        [FormValueRequired("deletecart")]
+        public virtual ActionResult DeleteCart(FormCollection form)
+        {
+            if (!_permissionService.Authorize(StandardPermissionProvider.EnableShoppingCart))
+                return RedirectToRoute("HomePage");
+
+            var cart = _workContext.CurrentCustomer.ShoppingCartItems
+                .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
+                .LimitPerStore(_storeContext.CurrentStore.Id)
+                .ToList();
+
+            var allIdsToRemove = form["removefromcart"] != null ? form["removefromcart"].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => int.Parse(x)).ToList() : new List<int>();
+
+            //current warnings <cart item identifier, warnings>
+            var innerWarnings = new Dictionary<int, IList<string>>();
+            foreach (var sci in cart)
+            {
+                _shoppingCartService.DeleteShoppingCartItem(sci, ensureOnlyActiveCheckoutAttributes: true);
+
+            }
+
+            //parse and save checkout attributes
+            ParseAndSaveCheckoutAttributes(cart, form);
+
+            //updated cart
+            cart = _workContext.CurrentCustomer.ShoppingCartItems
+                .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
+                .LimitPerStore(_storeContext.CurrentStore.Id)
+                .ToList();
+            var model = new ShoppingCartModel();
+            model = _shoppingCartModelFactory.PrepareShoppingCartModel(model, cart);
+            //update current warnings
+            foreach (var kvp in innerWarnings)
+            {
+                //kvp = <cart item identifier, warnings>
+                var sciId = kvp.Key;
+                var warnings = kvp.Value;
+                //find model
+                var sciModel = model.Items.FirstOrDefault(x => x.Id == sciId);
+                if (sciModel != null)
+                    foreach (var w in warnings)
+                        if (!sciModel.Warnings.Contains(w))
+                            sciModel.Warnings.Add(w);
+            }
+            return RedirectToAction("Cart");// View(model);
         }
 
         [ValidateInput(false)]

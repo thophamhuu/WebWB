@@ -1,0 +1,76 @@
+﻿@using Nop.Web.Framework;
+@{
+    Layout = "~/Administration/Views/Shared/_AdminLayout.cshtml";
+    Html.SetActiveMenuItemSystemName("Affiliate.Plugins.Amazon.Task");
+}
+@model Nop.Core.Domain.Tasks.ScheduleTask
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="col-md-4">
+                    <div class="row">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.NopLabelFor(model => model.Enabled)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.NopEditorFor(model => model.Enabled)
+                                @Html.ValidationMessageFor(model => model.Enabled)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.NopLabelFor(model => model.Name)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.NopEditorFor(model => model.Name)
+                                @Html.ValidationMessageFor(model => model.Name)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.NopLabelFor(model => model.Seconds)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.NopEditorFor(model => model.Seconds)
+                                @Html.ValidationMessageFor(model => model.Seconds)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.NopLabelFor(model => model.StopOnError)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.NopEditorFor(model => model.StopOnError)
+                                @Html.ValidationMessageFor(model => model.StopOnError)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.NopLabelFor(model => model.Type)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.NopEditorFor(model => model.Type)
+                                @Html.ValidationMessageFor(model => model.Type)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                &nbsp;
+                            </div>
+                            <div class="col-md-9">
+                                <input type="submit" name="save" class="btn bg-blue" value="@T("Admin.Common.Save")" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+}

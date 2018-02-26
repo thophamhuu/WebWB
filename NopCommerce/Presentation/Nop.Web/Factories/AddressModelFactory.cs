@@ -226,6 +226,7 @@ namespace Nop.Web.Factories
 
                 if (addressSettings.StateProvinceEnabled)
                 {
+                    model.StateProvinceRequired = addressSettings.StateProvinceRequired;
                     var languageId = EngineContext.Current.Resolve<IWorkContext>().WorkingLanguage.Id;
                     var states = _stateProvinceService
                         .GetStateProvincesByCountryId(model.CountryId.HasValue ? model.CountryId.Value : 0, languageId)

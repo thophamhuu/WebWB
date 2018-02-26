@@ -8,7 +8,6 @@ using Nop.Core.Domain.Orders;
 using Nop.Plugin.Affiliate.CategoryMap.Domain;
 using Nop.Plugin.Affiliate.CategoryMap.Services;
 using Nop.Plugin.Affiliate.Ebay.Models;
-using Nop.Plugin.Affiliate.Ebay.Services;
 using Nop.Plugin.Order.Ebay.Domain;
 using Nop.Plugin.Order.Ebay.Models;
 using Nop.Plugin.Order.Ebay.Services;

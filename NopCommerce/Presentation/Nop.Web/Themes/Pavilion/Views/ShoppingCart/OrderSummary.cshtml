@@ -115,7 +115,7 @@
                                 @if (Model.ShowProductImages)
                                 {
                                     <td class="product-picture">
-                                        <a href="@Url.RouteUrl("Product", new { SeName = item.ProductSeName })"><img alt="@item.Picture.AlternateText" src="@item.Picture.ImageUrl" title="@item.Picture.Title" /></a>
+                                        <a href="@Url.RouteUrl("Product", new { SeName = item.ProductSeName })"><img height="75" alt="@item.Picture.AlternateText" src="@item.Picture.ImageUrl" title="@item.Picture.Title" /></a>
                                     </td>
                                 }
                                 <td class="product">
@@ -209,6 +209,7 @@
                 {
                     <div class="common-buttons">
                         <input type="submit" name="updatecart" value="@T("ShoppingCart.UpdateCart")" class="button-2 update-cart-button" />
+                        <input type="submit" name="deletecart" value="@T("ShoppingCart.DeleteCart")" class="button-2 delete-cart-button" />
                         <input type="submit" name="continueshopping" value="@T("ShoppingCart.ContinueShopping")" class="button-2 continue-shopping-button" />
                     </div>
                 }
@@ -220,7 +221,7 @@
                 }
             </div>
         
-            if (Model.IsEditable && Model.Items.Count > 0 && Model.DisplayTaxShippingInfo)
+            @*if (Model.IsEditable && Model.Items.Count > 0 && Model.DisplayTaxShippingInfo)
             {
                 var inclTax = EngineContext.Current.Resolve<IWorkContext>().TaxDisplayType == TaxDisplayType.IncludingTax;
                 //tax info is already included in the price (incl/excl tax). that's why we display only shipping info here
@@ -228,7 +229,7 @@
                 <div class="tax-shipping-info">
                     @T(inclTax ? "ShoppingCart.TaxShipping.InclTax" : "ShoppingCart.TaxShipping.ExclTax", Url.RouteUrl("Topic", new { SeName = Html.GetTopicSeName("shippinginfo") }))
                 </div>
-            }
+            }*@
         
             <div class="cart-footer">
                 @Html.Widget("order_summary_cart_footer")

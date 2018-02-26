@@ -145,5 +145,25 @@ namespace Nop.Core.Domain.Orders
                 return false;
             }
         }
+
+        public ShoppingCartItem CloneToApi()
+        {
+            return new ShoppingCartItem
+            {
+                AttributesXml = this.AttributesXml,
+                CreatedOnUtc = this.CreatedOnUtc,
+                CustomerEnteredPrice = this.CustomerEnteredPrice,
+                CustomerId = this.CustomerId,
+                Id = this.Id,
+                ProductId = this.ProductId,
+                Quantity = this.Quantity,
+                RentalEndDateUtc = this.RentalEndDateUtc,
+                RentalStartDateUtc = this.RentalStartDateUtc,
+                ShoppingCartType = this.ShoppingCartType,
+                StoreId = this.StoreId,
+                UpdatedOnUtc = this.UpdatedOnUtc,
+
+            };
+        }
     }
 }

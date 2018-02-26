@@ -30,13 +30,14 @@ using Nop.Services.Security;
 using Nop.Services.Shipping;
 using Nop.Services.Tax;
 using Nop.Services.Vendors;
+using Nop.Services.Models.Responses;
 
 namespace Nop.Services.Orders
 {
     /// <summary>
     /// Order processing service
     /// </summary>
-    public partial class OrderProcessingService : IOrderProcessingService
+    public partial class OrderProcessingService : ApiService, IOrderProcessingService
     {
         #region Fields
 
@@ -229,17 +230,15 @@ namespace Nop.Services.Orders
                 this.AppliedGiftCards = new List<AppliedGiftCard>();
             }
 
-            public Customer Customer { get; set; }
-            public Language CustomerLanguage { get; set; }
+            public int CustomerId { get; set; }
+            public int CustomerLanguageId { get; set; }
             public int AffiliateId { get; set; }
             public TaxDisplayType CustomerTaxDisplayType { get; set; }
             public string CustomerCurrencyCode { get; set; }
             public decimal CustomerCurrencyRate { get; set; }
 
             public int BillingAddressId { get; set; }
-            public Address BillingAddress { get; set; }
             public int ShippingAddressId { get; set; }
-            public Address ShippingAddress { get; set; }
             public ShippingStatus ShippingStatus { get; set; }
             public string ShippingMethodName { get; set; }
             public string ShippingRateComputationMethodSystemName { get; set; }
@@ -288,65 +287,64 @@ namespace Nop.Services.Orders
             var details = new PlaceOrderContainter();
 
             //customer
-            details.Customer = _customerService.GetCustomerById(processPaymentRequest.CustomerId);
-            if (details.Customer == null)
+            var customer = _customerService.GetCustomerById(processPaymentRequest.CustomerId);
+            if (customer == null)
                 throw new ArgumentException("Customer is not set");
-
+            details.CustomerId = customer.Id;
             //affiliate
-            var affiliate = _affiliateService.GetAffiliateById(details.Customer.AffiliateId);
+            var affiliate = _affiliateService.GetAffiliateById(customer.AffiliateId);
             if (affiliate != null && affiliate.Active && !affiliate.Deleted)
                 details.AffiliateId = affiliate.Id;
 
             //check whether customer is guest
-            if (details.Customer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed)
+            if (customer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed)
                 throw new NopException("Anonymous checkout is not allowed");
 
             //customer currency
             var currencyTmp = _currencyService.GetCurrencyById(
-                details.Customer.GetAttribute<int>(SystemCustomerAttributeNames.CurrencyId, processPaymentRequest.StoreId));
+                customer.GetAttribute<int>(SystemCustomerAttributeNames.CurrencyId, processPaymentRequest.StoreId));
             var customerCurrency = (currencyTmp != null && currencyTmp.Published) ? currencyTmp : _workContext.WorkingCurrency;
             var primaryStoreCurrency = _currencyService.GetCurrencyById(_currencySettings.PrimaryStoreCurrencyId);
             details.CustomerCurrencyCode = customerCurrency.CurrencyCode;
             details.CustomerCurrencyRate = customerCurrency.Rate / primaryStoreCurrency.Rate;
 
             //customer language
-            details.CustomerLanguage = _languageService.GetLanguageById(
-                details.Customer.GetAttribute<int>(SystemCustomerAttributeNames.LanguageId, processPaymentRequest.StoreId));
-            if (details.CustomerLanguage == null || !details.CustomerLanguage.Published)
-                details.CustomerLanguage = _workContext.WorkingLanguage;
-
+            var customerLanguage = _languageService.GetLanguageById(
+               customer.GetAttribute<int>(SystemCustomerAttributeNames.LanguageId, processPaymentRequest.StoreId));
+            if (customerLanguage == null || !customerLanguage.Published)
+                customerLanguage = _workContext.WorkingLanguage;
+            details.CustomerLanguageId = customerLanguage.Id;
             //billing address
-            if (details.Customer.BillingAddress == null)
+            if (customer.BillingAddress == null)
                 throw new NopException("Billing address is not provided");
 
-            if (!CommonHelper.IsValidEmail(details.Customer.BillingAddress.Email))
+            if (!CommonHelper.IsValidEmail(customer.BillingAddress.Email))
                 throw new NopException("Email is not valid");
 
-            details.BillingAddress = (Address)details.Customer.BillingAddress.Clone();
-            details.BillingAddressId = details.Customer.BillingAddress.Id;
-            if (details.BillingAddress.Country != null && !details.BillingAddress.Country.AllowsBilling)
-                throw new NopException(string.Format("Country '{0}' is not allowed for billing", details.BillingAddress.Country.Name));
-
+            if (customer.BillingAddress.Country != null && !customer.BillingAddress.Country.AllowsBilling)
+                throw new NopException(string.Format("Country '{0}' is not allowed for billing", customer.BillingAddress.Country.Name));
+            details.BillingAddressId = customer.BillingAddress.Id;
             //checkout attributes
-            details.CheckoutAttributesXml = details.Customer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, processPaymentRequest.StoreId);
-            details.CheckoutAttributeDescription = _checkoutAttributeFormatter.FormatAttributes(details.CheckoutAttributesXml, details.Customer);
+            details.CheckoutAttributesXml = customer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, processPaymentRequest.StoreId);
+            details.CheckoutAttributeDescription = _checkoutAttributeFormatter.FormatAttributes(details.CheckoutAttributesXml, customer);
 
             //load shopping cart
-            details.Cart = details.Customer.ShoppingCartItems.Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
+            var cart = customer.ShoppingCartItems.Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
                 .LimitPerStore(processPaymentRequest.StoreId).ToList();
+            //details.Cart =
 
-            if (!details.Cart.Any())
+            if (!cart.Any())
                 throw new NopException("Cart is empty");
-
+            details.Cart = cart.Select(x => x.CloneToApi()).ToList();
             //validate the entire shopping cart
-            var warnings = _shoppingCartService.GetShoppingCartWarnings(details.Cart, details.CheckoutAttributesXml, true);
+            var warnings = _shoppingCartService.GetShoppingCartWarnings(cart, details.CheckoutAttributesXml, true);
             if (warnings.Any())
                 throw new NopException(warnings.Aggregate(string.Empty, (current, next) => string.Format("{0}{1};", current, next)));
 
             //validate individual cart items
-            foreach (var sci in details.Cart)
+            foreach (var sci in cart)
             {
-                var sciWarnings = _shoppingCartService.GetShoppingCartItemWarnings(details.Customer,
+                var sciWarnings = _shoppingCartService.GetShoppingCartItemWarnings(customer,
                     sci.ShoppingCartType, sci.Product, processPaymentRequest.StoreId, sci.AttributesXml,
                     sci.CustomerEnteredPrice, sci.RentalStartDateUtc, sci.RentalEndDateUtc, sci.Quantity, false);
                 if (sciWarnings.Any())
@@ -354,14 +352,14 @@ namespace Nop.Services.Orders
             }
 
             //min totals validation
-            if (!ValidateMinOrderSubtotalAmount(details.Cart))
+            if (!ValidateMinOrderSubtotalAmount(cart))
             {
                 var minOrderSubtotalAmount = _currencyService.ConvertFromPrimaryStoreCurrency(_orderSettings.MinOrderSubtotalAmount, _workContext.WorkingCurrency);
                 throw new NopException(string.Format(_localizationService.GetResource("Checkout.MinOrderSubtotalAmount"),
                     _priceFormatter.FormatPrice(minOrderSubtotalAmount, true, false)));
             }
 
-            if (!ValidateMinOrderTotalAmount(details.Cart))
+            if (!ValidateMinOrderTotalAmount(cart))
             {
                 var minOrderTotalAmount = _currencyService.ConvertFromPrimaryStoreCurrency(_orderSettings.MinOrderTotalAmount, _workContext.WorkingCurrency);
                 throw new NopException(string.Format(_localizationService.GetResource("Checkout.MinOrderTotalAmount"),
@@ -370,7 +368,7 @@ namespace Nop.Services.Orders
 
             //tax display type
             if (_taxSettings.AllowCustomersToSelectTaxDisplayType)
-                details.CustomerTaxDisplayType = (TaxDisplayType)details.Customer.GetAttribute<int>(SystemCustomerAttributeNames.TaxDisplayTypeId, processPaymentRequest.StoreId);
+                details.CustomerTaxDisplayType = (TaxDisplayType)customer.GetAttribute<int>(SystemCustomerAttributeNames.TaxDisplayTypeId, processPaymentRequest.StoreId);
             else
                 details.CustomerTaxDisplayType = _taxSettings.TaxDisplayType;
 
@@ -379,7 +377,7 @@ namespace Nop.Services.Orders
             List<DiscountForCaching> orderSubTotalAppliedDiscounts;
             decimal subTotalWithoutDiscountBase;
             decimal subTotalWithDiscountBase;
-            _orderTotalCalculationService.GetShoppingCartSubTotal(details.Cart, true, out orderSubTotalDiscountAmount,
+            _orderTotalCalculationService.GetShoppingCartSubTotal(cart, true, out orderSubTotalDiscountAmount,
                 out orderSubTotalAppliedDiscounts, out subTotalWithoutDiscountBase, out subTotalWithDiscountBase);
             details.OrderSubTotalInclTax = subTotalWithoutDiscountBase;
             details.OrderSubTotalDiscountInclTax = orderSubTotalDiscountAmount;
@@ -390,15 +388,15 @@ namespace Nop.Services.Orders
                     details.AppliedDiscounts.Add(disc);
 
             //sub total (excl tax)
-            _orderTotalCalculationService.GetShoppingCartSubTotal(details.Cart, false, out orderSubTotalDiscountAmount,
+            _orderTotalCalculationService.GetShoppingCartSubTotal(cart, false, out orderSubTotalDiscountAmount,
                 out orderSubTotalAppliedDiscounts, out subTotalWithoutDiscountBase, out subTotalWithDiscountBase);
             details.OrderSubTotalExclTax = subTotalWithoutDiscountBase;
             details.OrderSubTotalDiscountExclTax = orderSubTotalDiscountAmount;
 
             //shipping info
-            if (details.Cart.RequiresShipping())
+            if (cart.RequiresShipping())
             {
-                var pickupPoint = details.Customer.GetAttribute<PickupPoint>(SystemCustomerAttributeNames.SelectedPickupPoint, processPaymentRequest.StoreId);
+                var pickupPoint = customer.GetAttribute<PickupPoint>(SystemCustomerAttributeNames.SelectedPickupPoint, processPaymentRequest.StoreId);
                 if (_shippingSettings.AllowPickUpInStore && pickupPoint != null)
                 {
                     var country = _countryService.GetCountryByTwoLetterIsoCode(pickupPoint.CountryCode);
@@ -417,20 +415,20 @@ namespace Nop.Services.Orders
                 }
                 else
                 {
-                    if (details.Customer.ShippingAddress == null)
+                    if (customer.ShippingAddress == null)
                         throw new NopException("Shipping address is not provided");
 
-                    if (!CommonHelper.IsValidEmail(details.Customer.ShippingAddress.Email))
+                    if (!CommonHelper.IsValidEmail(customer.ShippingAddress.Email))
                         throw new NopException("Email is not valid");
 
                     //clone shipping address
-                    details.ShippingAddress = (Address)details.Customer.ShippingAddress.Clone();
-                    details.ShippingAddressId = details.Customer.ShippingAddress.Id;
-                    if (details.ShippingAddress.Country != null && !details.ShippingAddress.Country.AllowsShipping)
-                        throw new NopException(string.Format("Country '{0}' is not allowed for shipping", details.ShippingAddress.Country.Name));
+
+                    if (customer.ShippingAddress.Country != null && !customer.ShippingAddress.Country.AllowsShipping)
+                        throw new NopException(string.Format("Country '{0}' is not allowed for shipping", customer.ShippingAddress.Country.Name));
+                    details.ShippingAddressId = customer.ShippingAddress.Id;
                 }
 
-                var shippingOption = details.Customer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, processPaymentRequest.StoreId);
+                var shippingOption = customer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, processPaymentRequest.StoreId);
                 if (shippingOption != null)
                 {
                     details.ShippingMethodName = shippingOption.Name;
@@ -445,8 +443,8 @@ namespace Nop.Services.Orders
             //shipping total
             decimal tax;
             List<DiscountForCaching> shippingTotalDiscounts;
-            var orderShippingTotalInclTax = _orderTotalCalculationService.GetShoppingCartShippingTotal(details.Cart, true, out tax, out shippingTotalDiscounts);
-            var orderShippingTotalExclTax = _orderTotalCalculationService.GetShoppingCartShippingTotal(details.Cart, false);
+            var orderShippingTotalInclTax = _orderTotalCalculationService.GetShoppingCartShippingTotal(cart, true, out tax, out shippingTotalDiscounts);
+            var orderShippingTotalExclTax = _orderTotalCalculationService.GetShoppingCartShippingTotal(cart, false);
             if (!orderShippingTotalInclTax.HasValue || !orderShippingTotalExclTax.HasValue)
                 throw new NopException("Shipping total couldn't be calculated");
 
@@ -458,18 +456,18 @@ namespace Nop.Services.Orders
                     details.AppliedDiscounts.Add(disc);
 
             //payment total
-            var paymentAdditionalFee = _paymentService.GetAdditionalHandlingFee(details.Cart, processPaymentRequest.PaymentMethodSystemName);
-            details.PaymentAdditionalFeeInclTax = _taxService.GetPaymentMethodAdditionalFee(paymentAdditionalFee, true, details.Customer);
-            details.PaymentAdditionalFeeExclTax = _taxService.GetPaymentMethodAdditionalFee(paymentAdditionalFee, false, details.Customer);
+            var paymentAdditionalFee = _paymentService.GetAdditionalHandlingFee(cart, processPaymentRequest.PaymentMethodSystemName);
+            details.PaymentAdditionalFeeInclTax = _taxService.GetPaymentMethodAdditionalFee(paymentAdditionalFee, true, customer);
+            details.PaymentAdditionalFeeExclTax = _taxService.GetPaymentMethodAdditionalFee(paymentAdditionalFee, false, customer);
 
             //tax amount
             SortedDictionary<decimal, decimal> taxRatesDictionary;
-            details.OrderTaxTotal = _orderTotalCalculationService.GetTaxTotal(details.Cart, out taxRatesDictionary);
+            details.OrderTaxTotal = _orderTotalCalculationService.GetTaxTotal(cart, out taxRatesDictionary);
 
             //VAT number
-            var customerVatStatus = (VatNumberStatus)details.Customer.GetAttribute<int>(SystemCustomerAttributeNames.VatNumberStatusId);
+            var customerVatStatus = (VatNumberStatus)customer.GetAttribute<int>(SystemCustomerAttributeNames.VatNumberStatusId);
             if (_taxSettings.EuVatEnabled && customerVatStatus == VatNumberStatus.Valid)
-                details.VatNumber = details.Customer.GetAttribute<string>(SystemCustomerAttributeNames.VatNumber);
+                details.VatNumber = customer.GetAttribute<string>(SystemCustomerAttributeNames.VatNumber);
 
             //tax rates
             details.TaxRates = taxRatesDictionary.Aggregate(string.Empty, (current, next) =>
@@ -481,7 +479,7 @@ namespace Nop.Services.Orders
             decimal orderDiscountAmount;
             int redeemedRewardPoints;
             decimal redeemedRewardPointsAmount;
-            var orderTotal = _orderTotalCalculationService.GetShoppingCartTotal(details.Cart, out orderDiscountAmount,
+            var orderTotal = _orderTotalCalculationService.GetShoppingCartTotal(cart, out orderDiscountAmount,
                 out orderAppliedDiscounts, out appliedGiftCards, out redeemedRewardPoints, out redeemedRewardPointsAmount);
             if (!orderTotal.HasValue)
                 throw new NopException("Order total couldn't be calculated");
@@ -500,13 +498,13 @@ namespace Nop.Services.Orders
             processPaymentRequest.OrderTotal = details.OrderTotal;
 
             //recurring or standard shopping cart?
-            details.IsRecurringShoppingCart = details.Cart.IsRecurring();
+            details.IsRecurringShoppingCart = cart.IsRecurring();
             if (details.IsRecurringShoppingCart)
             {
                 int recurringCycleLength;
                 RecurringProductCyclePeriod recurringCyclePeriod;
                 int recurringTotalCycles;
-                var recurringCyclesError = details.Cart.GetRecurringCycleInfo(_localizationService,
+                var recurringCyclesError = cart.GetRecurringCycleInfo(_localizationService,
                     out recurringCycleLength, out recurringCyclePeriod, out recurringTotalCycles);
                 if (!string.IsNullOrEmpty(recurringCyclesError))
                     throw new NopException(recurringCyclesError);
@@ -537,17 +535,17 @@ namespace Nop.Services.Orders
             processPaymentRequest.PaymentMethodSystemName = details.InitialOrder.PaymentMethodSystemName;
 
             //customer
-            details.Customer = _customerService.GetCustomerById(processPaymentRequest.CustomerId);
-            if (details.Customer == null)
+            var customer = _customerService.GetCustomerById(processPaymentRequest.CustomerId);
+            if (customer == null)
                 throw new ArgumentException("Customer is not set");
-
+            details.CustomerId = customer.Id;
             //affiliate
-            var affiliate = _affiliateService.GetAffiliateById(details.Customer.AffiliateId);
+            var affiliate = _affiliateService.GetAffiliateById(customer.AffiliateId);
             if (affiliate != null && affiliate.Active && !affiliate.Deleted)
                 details.AffiliateId = affiliate.Id;
 
             //check whether customer is guest
-            if (details.Customer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed)
+            if (customer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed)
                 throw new NopException("Anonymous checkout is not allowed");
 
             //customer currency
@@ -555,18 +553,18 @@ namespace Nop.Services.Orders
             details.CustomerCurrencyRate = details.InitialOrder.CurrencyRate;
 
             //customer language
-            details.CustomerLanguage = _languageService.GetLanguageById(details.InitialOrder.CustomerLanguageId);
-            if (details.CustomerLanguage == null || !details.CustomerLanguage.Published)
-                details.CustomerLanguage = _workContext.WorkingLanguage;
-
+            var customerLanguage = _languageService.GetLanguageById(details.InitialOrder.CustomerLanguageId);
+            if (customerLanguage == null || !customerLanguage.Published)
+                customerLanguage = _workContext.WorkingLanguage;
+            details.CustomerLanguageId = customerLanguage.Id;
             //billing address
             if (details.InitialOrder.BillingAddress == null)
                 throw new NopException("Billing address is not available");
 
-            details.BillingAddress = (Address)details.InitialOrder.BillingAddress.Clone();
-            if (details.BillingAddress.Country != null && !details.BillingAddress.Country.AllowsBilling)
-                throw new NopException(string.Format("Country '{0}' is not allowed for billing", details.BillingAddress.Country.Name));
-
+            //details.BillingAddress = (Address)details.InitialOrder.BillingAddress.Clone();
+            if (customer.BillingAddress.Country != null && !customer.BillingAddress.Country.AllowsBilling)
+                throw new NopException(string.Format("Country '{0}' is not allowed for billing", customer.BillingAddress.Country.Name));
+            details.BillingAddressId = customer.BillingAddress.Id;
             //checkout attributes
             details.CheckoutAttributesXml = details.InitialOrder.CheckoutAttributesXml;
             details.CheckoutAttributeDescription = details.InitialOrder.CheckoutAttributeDescription;
@@ -588,9 +586,10 @@ namespace Nop.Services.Orders
                         throw new NopException("Shipping address is not available");
 
                     //clone shipping address
-                    details.ShippingAddress = (Address)details.InitialOrder.ShippingAddress.Clone();
-                    if (details.ShippingAddress.Country != null && !details.ShippingAddress.Country.AllowsShipping)
-                        throw new NopException(string.Format("Country '{0}' is not allowed for shipping", details.ShippingAddress.Country.Name));
+                    //details.ShippingAddress = (Address)details.InitialOrder.ShippingAddress.Clone();
+                    if (customer.ShippingAddress.Country != null && !customer.ShippingAddress.Country.AllowsShipping)
+                        throw new NopException(string.Format("Country '{0}' is not allowed for shipping", customer.ShippingAddress.Country.Name));
+                    details.ShippingAddressId = customer.ShippingAddress.Id;
                 }
                 else
                     if (details.InitialOrder.PickupAddress != null)
@@ -638,8 +637,8 @@ namespace Nop.Services.Orders
             {
                 StoreId = processPaymentRequest.StoreId,
                 OrderGuid = processPaymentRequest.OrderGuid,
-                CustomerId = details.Customer.Id,
-                CustomerLanguageId = details.CustomerLanguage.Id,
+                CustomerId = details.CustomerId,
+                CustomerLanguageId = details.CustomerLanguageId,
                 CustomerTaxDisplayType = details.CustomerTaxDisplayType,
                 CustomerIp = _webHelper.GetCurrentIpAddress(),
                 OrderSubtotalInclTax = details.OrderSubTotalInclTax,
@@ -701,10 +700,11 @@ namespace Nop.Services.Orders
             //reward points history
             if (details.RedeemedRewardPointsAmount > decimal.Zero)
             {
-                _rewardPointService.AddRewardPointsHistoryEntry(details.Customer, -details.RedeemedRewardPoints, order.StoreId,
+                var customer = _customerService.GetCustomerById(details.CustomerId);
+                _rewardPointService.AddRewardPointsHistoryEntry(customer, -details.RedeemedRewardPoints, order.StoreId,
                     string.Format(_localizationService.GetResource("RewardPoints.Message.RedeemedForOrder", order.CustomerLanguageId), order.CustomOrderNumber),
                     order, details.RedeemedRewardPointsAmount);
-                _customerService.UpdateCustomer(details.Customer);
+                _customerService.UpdateCustomer(customer);
             }
 
             return order;
@@ -716,6 +716,8 @@ namespace Nop.Services.Orders
         /// <param name="order">Order</param>
         protected virtual void SendNotificationsAndSaveNotes(Order order)
         {
+            order = _orderService.GetOrderById(order.Id);
+            order.Customer = _customerService.GetCustomerById(order.CustomerId);
             //notes, messages
             if (_workContext.OriginalCustomerIfImpersonated != null)
                 //this order is placed by a store administrator impersonating a customer
@@ -1213,12 +1215,14 @@ namespace Nop.Services.Orders
             var result = new PlaceOrderResult();
             try
             {
+
                 if (processPaymentRequest.OrderGuid == Guid.Empty)
                     processPaymentRequest.OrderGuid = Guid.NewGuid();
 
+                var customer = _customerService.GetCustomerById(processPaymentRequest.CustomerId);
+
                 //prepare order details
                 var details = PreparePlaceOrderDetails(processPaymentRequest);
-
                 #region Payment workflow
 
 
@@ -1266,189 +1270,201 @@ namespace Nop.Services.Orders
 
                 if (processPaymentResult.Success)
                 {
-                    #region Save order details
-
-                    var order = SaveOrderDetails(processPaymentRequest, processPaymentResult, details);
-                    result.PlacedOrder = order;
-
-                    //move shopping cart items to order items
-                    foreach (var sc in details.Cart)
+                    var order = new Order();
+                    if (CheckUseApi)
                     {
-                        //prices
-                        decimal taxRate;
-                        List<DiscountForCaching> scDiscounts;
-                        decimal discountAmount;
-                        int? maximumDiscountQty;
-                        var scUnitPrice = _priceCalculationService.GetUnitPrice(sc);
-                        var scSubTotal = _priceCalculationService.GetSubTotal(sc, true, out discountAmount, out scDiscounts, out maximumDiscountQty);
-                        var scUnitPriceInclTax = _taxService.GetProductPrice(sc.Product, scUnitPrice, true, details.Customer, out taxRate);
-                        var scUnitPriceExclTax = _taxService.GetProductPrice(sc.Product, scUnitPrice, false, details.Customer, out taxRate);
-                        var scSubTotalInclTax = _taxService.GetProductPrice(sc.Product, scSubTotal, true, details.Customer, out taxRate);
-                        var scSubTotalExclTax = _taxService.GetProductPrice(sc.Product, scSubTotal, false, details.Customer, out taxRate);
-                        var discountAmountInclTax = _taxService.GetProductPrice(sc.Product, discountAmount, true, details.Customer, out taxRate);
-                        var discountAmountExclTax = _taxService.GetProductPrice(sc.Product, discountAmount, false, details.Customer, out taxRate);
-                        foreach (var disc in scDiscounts)
-                            if (!details.AppliedDiscounts.ContainsDiscount(disc))
-                                details.AppliedDiscounts.Add(disc);
+                        var body = new { processPaymentRequest, processPaymentResult, details };
+                        result = APIHelper.Instance.PostAsync<PlaceOrderResult>("OrderProcessings", "PlaceOrder", body);
+                        order = result.PlacedOrder;
+                    }
+                    else
+                    {
+                        order = SaveOrderDetails(processPaymentRequest, processPaymentResult, details);
+                        result.PlacedOrder = order;
 
-                        //attributes
-                        var attributeDescription = _productAttributeFormatter.FormatAttributes(sc.Product, sc.AttributesXml, details.Customer);
-
-                        var itemWeight = _shippingService.GetShoppingCartItemWeight(sc);
-
-                        //save order item
-                        var orderItem = new OrderItem
+                        //move shopping cart items to order items
+                        foreach (var sc in details.Cart)
                         {
-                            OrderItemGuid = Guid.NewGuid(),
-                            Order = order,
-                            ProductId = sc.ProductId,
-                            UnitPriceInclTax = scUnitPriceInclTax,
-                            UnitPriceExclTax = scUnitPriceExclTax,
-                            PriceInclTax = scSubTotalInclTax,
-                            PriceExclTax = scSubTotalExclTax,
-                            OriginalProductCost = _priceCalculationService.GetProductCost(sc.Product, sc.AttributesXml),
-                            AttributeDescription = attributeDescription,
-                            AttributesXml = sc.AttributesXml,
-                            Quantity = sc.Quantity,
-                            DiscountAmountInclTax = discountAmountInclTax,
-                            DiscountAmountExclTax = discountAmountExclTax,
-                            DownloadCount = 0,
-                            IsDownloadActivated = false,
-                            LicenseDownloadId = 0,
-                            ItemWeight = itemWeight,
-                            RentalStartDateUtc = sc.RentalStartDateUtc,
-                            RentalEndDateUtc = sc.RentalEndDateUtc
-                        };
-                        order.OrderItems.Add(orderItem);
-                        _orderService.UpdateOrder(order);
+                            //prices
+                            decimal taxRate;
+                            List<DiscountForCaching> scDiscounts;
+                            decimal discountAmount;
+                            int? maximumDiscountQty;
+                            var scUnitPrice = _priceCalculationService.GetUnitPrice(sc);
+                            var scSubTotal = _priceCalculationService.GetSubTotal(sc, true, out discountAmount, out scDiscounts, out maximumDiscountQty);
+                            var scUnitPriceInclTax = _taxService.GetProductPrice(sc.Product, scUnitPrice, true, customer, out taxRate);
+                            var scUnitPriceExclTax = _taxService.GetProductPrice(sc.Product, scUnitPrice, false, customer, out taxRate);
+                            var scSubTotalInclTax = _taxService.GetProductPrice(sc.Product, scSubTotal, true, customer, out taxRate);
+                            var scSubTotalExclTax = _taxService.GetProductPrice(sc.Product, scSubTotal, false, customer, out taxRate);
+                            var discountAmountInclTax = _taxService.GetProductPrice(sc.Product, discountAmount, true, customer, out taxRate);
+                            var discountAmountExclTax = _taxService.GetProductPrice(sc.Product, discountAmount, false, customer, out taxRate);
+                            foreach (var disc in scDiscounts)
+                                if (!details.AppliedDiscounts.ContainsDiscount(disc))
+                                    details.AppliedDiscounts.Add(disc);
 
-                        //gift cards
-                        if (sc.Product.IsGiftCard)
-                        {
-                            string giftCardRecipientName;
-                            string giftCardRecipientEmail;
-                            string giftCardSenderName;
-                            string giftCardSenderEmail;
-                            string giftCardMessage;
-                            _productAttributeParser.GetGiftCardAttribute(sc.AttributesXml, out giftCardRecipientName,
-                                out giftCardRecipientEmail, out giftCardSenderName, out giftCardSenderEmail, out giftCardMessage);
+                            //attributes
+                            var attributeDescription = _productAttributeFormatter.FormatAttributes(sc.Product, sc.AttributesXml, customer);
 
-                            for (var i = 0; i < sc.Quantity; i++)
+                            var itemWeight = _shippingService.GetShoppingCartItemWeight(sc);
+
+                            //save order item
+                            var orderItem = new OrderItem
                             {
-                                _giftCardService.InsertGiftCard(new GiftCard
+                                OrderItemGuid = Guid.NewGuid(),
+                                Order = order,
+                                ProductId = sc.ProductId,
+                                UnitPriceInclTax = scUnitPriceInclTax,
+                                UnitPriceExclTax = scUnitPriceExclTax,
+                                PriceInclTax = scSubTotalInclTax,
+                                PriceExclTax = scSubTotalExclTax,
+                                OriginalProductCost = _priceCalculationService.GetProductCost(sc.Product, sc.AttributesXml),
+                                AttributeDescription = attributeDescription,
+                                AttributesXml = sc.AttributesXml,
+                                Quantity = sc.Quantity,
+                                DiscountAmountInclTax = discountAmountInclTax,
+                                DiscountAmountExclTax = discountAmountExclTax,
+                                DownloadCount = 0,
+                                IsDownloadActivated = false,
+                                LicenseDownloadId = 0,
+                                ItemWeight = itemWeight,
+                                RentalStartDateUtc = sc.RentalStartDateUtc,
+                                RentalEndDateUtc = sc.RentalEndDateUtc
+                            };
+                            order.OrderItems.Add(orderItem);
+                            _orderService.UpdateOrder(order);
+
+                            //gift cards
+                            if (sc.Product.IsGiftCard)
+                            {
+                                string giftCardRecipientName;
+                                string giftCardRecipientEmail;
+                                string giftCardSenderName;
+                                string giftCardSenderEmail;
+                                string giftCardMessage;
+                                _productAttributeParser.GetGiftCardAttribute(sc.AttributesXml, out giftCardRecipientName,
+                                    out giftCardRecipientEmail, out giftCardSenderName, out giftCardSenderEmail, out giftCardMessage);
+
+                                for (var i = 0; i < sc.Quantity; i++)
                                 {
-                                    GiftCardType = sc.Product.GiftCardType,
-                                    PurchasedWithOrderItem = orderItem,
-                                    Amount = sc.Product.OverriddenGiftCardAmount.HasValue ? sc.Product.OverriddenGiftCardAmount.Value : scUnitPriceExclTax,
-                                    IsGiftCardActivated = false,
-                                    GiftCardCouponCode = _giftCardService.GenerateGiftCardCode(),
-                                    RecipientName = giftCardRecipientName,
-                                    RecipientEmail = giftCardRecipientEmail,
-                                    SenderName = giftCardSenderName,
-                                    SenderEmail = giftCardSenderEmail,
-                                    Message = giftCardMessage,
-                                    IsRecipientNotified = false,
+                                    _giftCardService.InsertGiftCard(new GiftCard
+                                    {
+                                        GiftCardType = sc.Product.GiftCardType,
+                                        PurchasedWithOrderItem = orderItem,
+                                        Amount = sc.Product.OverriddenGiftCardAmount.HasValue ? sc.Product.OverriddenGiftCardAmount.Value : scUnitPriceExclTax,
+                                        IsGiftCardActivated = false,
+                                        GiftCardCouponCode = _giftCardService.GenerateGiftCardCode(),
+                                        RecipientName = giftCardRecipientName,
+                                        RecipientEmail = giftCardRecipientEmail,
+                                        SenderName = giftCardSenderName,
+                                        SenderEmail = giftCardSenderEmail,
+                                        Message = giftCardMessage,
+                                        IsRecipientNotified = false,
+                                        CreatedOnUtc = DateTime.UtcNow
+                                    });
+                                }
+                            }
+
+                            //inventory
+                            _productService.AdjustInventory(sc.Product, -sc.Quantity, sc.AttributesXml,
+                                string.Format(_localizationService.GetResource("Admin.StockQuantityHistory.Messages.PlaceOrder"), order.Id));
+                        }
+
+                        //clear shopping cart
+                        details.Cart.ToList().ForEach(sci => _shoppingCartService.DeleteShoppingCartItem(sci, false));
+
+                        //discount usage history
+                        foreach (var discount in details.AppliedDiscounts)
+                        {
+                            var d = _discountService.GetDiscountById(discount.Id);
+                            if (d != null)
+                            {
+                                _discountService.InsertDiscountUsageHistory(new DiscountUsageHistory
+                                {
+                                    Discount = d,
+                                    Order = order,
                                     CreatedOnUtc = DateTime.UtcNow
                                 });
                             }
                         }
 
-                        //inventory
-                        _productService.AdjustInventory(sc.Product, -sc.Quantity, sc.AttributesXml,
-                            string.Format(_localizationService.GetResource("Admin.StockQuantityHistory.Messages.PlaceOrder"), order.Id));
-                    }
-
-                    //clear shopping cart
-                    details.Cart.ToList().ForEach(sci => _shoppingCartService.DeleteShoppingCartItem(sci, false));
-
-                    //discount usage history
-                    foreach (var discount in details.AppliedDiscounts)
-                    {
-                        var d = _discountService.GetDiscountById(discount.Id);
-                        if (d != null)
-                        {
-                            _discountService.InsertDiscountUsageHistory(new DiscountUsageHistory
+                        //gift card usage history
+                        if (details.AppliedGiftCards != null)
+                            foreach (var agc in details.AppliedGiftCards)
                             {
-                                Discount = d,
-                                Order = order,
-                                CreatedOnUtc = DateTime.UtcNow
-                            });
-                        }
-                    }
-
-                    //gift card usage history
-                    if (details.AppliedGiftCards != null)
-                        foreach (var agc in details.AppliedGiftCards)
-                        {
-                            agc.GiftCard.GiftCardUsageHistory.Add(new GiftCardUsageHistory
-                            {
-                                GiftCard = agc.GiftCard,
-                                UsedWithOrder = order,
-                                UsedValue = agc.AmountCanBeUsed,
-                                CreatedOnUtc = DateTime.UtcNow
-                            });
-                            _giftCardService.UpdateGiftCard(agc.GiftCard);
-                        }
-
-                    //recurring orders
-                    if (details.IsRecurringShoppingCart)
-                    {
-                        //create recurring payment (the first payment)
-                        var rp = new RecurringPayment
-                        {
-                            CycleLength = processPaymentRequest.RecurringCycleLength,
-                            CyclePeriod = processPaymentRequest.RecurringCyclePeriod,
-                            TotalCycles = processPaymentRequest.RecurringTotalCycles,
-                            StartDateUtc = DateTime.UtcNow,
-                            IsActive = true,
-                            CreatedOnUtc = DateTime.UtcNow,
-                            InitialOrder = order,
-                        };
-                        _orderService.InsertRecurringPayment(rp);
-
-                        switch (_paymentService.GetRecurringPaymentType(processPaymentRequest.PaymentMethodSystemName))
-                        {
-                            case RecurringPaymentType.NotSupported:
-                                //not supported
-                                break;
-                            case RecurringPaymentType.Manual:
-                                rp.RecurringPaymentHistory.Add(new RecurringPaymentHistory
+                                agc.GiftCard.GiftCardUsageHistory.Add(new GiftCardUsageHistory
                                 {
-                                    RecurringPayment = rp,
-                                    CreatedOnUtc = DateTime.UtcNow,
-                                    OrderId = order.Id,
+                                    GiftCard = agc.GiftCard,
+                                    UsedWithOrder = order,
+                                    UsedValue = agc.AmountCanBeUsed,
+                                    CreatedOnUtc = DateTime.UtcNow
                                 });
-                                _orderService.UpdateRecurringPayment(rp);
-                                break;
-                            case RecurringPaymentType.Automatic:
-                                //will be created later (process is automated)
-                                break;
-                            default:
-                                break;
+                                _giftCardService.UpdateGiftCard(agc.GiftCard);
+                            }
+
+                        //recurring orders
+                        if (details.IsRecurringShoppingCart)
+                        {
+                            //create recurring payment (the first payment)
+                            var rp = new RecurringPayment
+                            {
+                                CycleLength = processPaymentRequest.RecurringCycleLength,
+                                CyclePeriod = processPaymentRequest.RecurringCyclePeriod,
+                                TotalCycles = processPaymentRequest.RecurringTotalCycles,
+                                StartDateUtc = DateTime.UtcNow,
+                                IsActive = true,
+                                CreatedOnUtc = DateTime.UtcNow,
+                                InitialOrder = order,
+                            };
+                            _orderService.InsertRecurringPayment(rp);
+
+                            switch (_paymentService.GetRecurringPaymentType(processPaymentRequest.PaymentMethodSystemName))
+                            {
+                                case RecurringPaymentType.NotSupported:
+                                    //not supported
+                                    break;
+                                case RecurringPaymentType.Manual:
+                                    rp.RecurringPaymentHistory.Add(new RecurringPaymentHistory
+                                    {
+                                        RecurringPayment = rp,
+                                        CreatedOnUtc = DateTime.UtcNow,
+                                        OrderId = order.Id,
+                                    });
+                                    _orderService.UpdateRecurringPayment(rp);
+                                    break;
+                                case RecurringPaymentType.Automatic:
+                                    //will be created later (process is automated)
+                                    break;
+                                default:
+                                    break;
+                            }
                         }
+                        SendNotificationsAndSaveNotes(order);
+
+                        //reset checkout data
+                        _customerService.ResetCheckoutData(customer, processPaymentRequest.StoreId, clearCouponCodes: true, clearCheckoutAttributes: true);
+                        _customerActivityService.InsertActivity("PublicStore.PlaceOrder", _localizationService.GetResource("ActivityLog.PublicStore.PlaceOrder"), order.Id);
+
+                        //check order status
+                        CheckOrderStatus(order);
+
+                        //raise event       
+                        _eventPublisher.Publish(new OrderPlacedEvent(order));
+
+                        if (order.PaymentStatus == PaymentStatus.Paid)
+                            ProcessOrderPaid(order);
                     }
+                    #region Save order details
+
 
                     #endregion
 
                     //notifications
-                    SendNotificationsAndSaveNotes(order);
 
-                    //reset checkout data
-                    _customerService.ResetCheckoutData(details.Customer, processPaymentRequest.StoreId, clearCouponCodes: true, clearCheckoutAttributes: true);
-                    _customerActivityService.InsertActivity("PublicStore.PlaceOrder", _localizationService.GetResource("ActivityLog.PublicStore.PlaceOrder"), order.Id);
-
-                    //check order status
-                    CheckOrderStatus(order);
-
-                    //raise event       
-                    _eventPublisher.Publish(new OrderPlacedEvent(order));
-
-                    if (order.PaymentStatus == PaymentStatus.Paid)
-                        ProcessOrderPaid(order);
                 }
                 else
                     foreach (var paymentError in processPaymentResult.Errors)
                         result.AddError(string.Format(_localizationService.GetResource("Checkout.PaymentError"), paymentError));
+
             }
             catch (Exception exc)
             {
@@ -3051,11 +3067,12 @@ namespace Nop.Services.Orders
         {
             if (order == null)
                 throw new ArgumentNullException("order");
-
+            var customer = _customerService.GetCustomerById(order.CustomerId);
             //move shopping cart items (if possible)
             foreach (var orderItem in order.OrderItems)
             {
-                _shoppingCartService.AddToCart(order.Customer, orderItem.Product,
+                var product = _productService.GetProductById(orderItem.ProductId);
+                _shoppingCartService.AddToCart(customer, product,
                     ShoppingCartType.ShoppingCart, order.StoreId,
                     orderItem.AttributesXml, orderItem.UnitPriceExclTax,
                     orderItem.RentalStartDateUtc, orderItem.RentalEndDateUtc,
@@ -3064,7 +3081,7 @@ namespace Nop.Services.Orders
 
             //set checkout attributes
             //comment the code below if you want to disable this functionality
-            _genericAttributeService.SaveAttribute(order.Customer, SystemCustomerAttributeNames.CheckoutAttributes, order.CheckoutAttributesXml, order.StoreId);
+            _genericAttributeService.SaveAttribute(customer, SystemCustomerAttributeNames.CheckoutAttributes, order.CheckoutAttributesXml, order.StoreId);
         }
 
         /// <summary>

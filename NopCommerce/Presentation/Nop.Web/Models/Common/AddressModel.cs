@@ -42,6 +42,7 @@ namespace Nop.Web.Models.Common
         public string CountryName { get; set; }
 
         public bool StateProvinceEnabled { get; set; }
+        public bool StateProvinceRequired { get; set; }
         [NopResourceDisplayName("Address.Fields.StateProvince")]
         public int? StateProvinceId { get; set; }
         [NopResourceDisplayName("Address.Fields.StateProvince")]

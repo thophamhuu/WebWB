@@ -27,6 +27,9 @@ namespace Nop.Web.Validators.Common
             RuleFor(x => x.Email)
                 .EmailAddress()
                 .WithMessage(localizationService.GetResource("Common.WrongEmail"));
+            RuleFor(x => x.Email)
+                .Matches(@"^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$")
+                .WithMessage(localizationService.GetResource("Common.WrongEmail"));
             if (addressSettings.CountryEnabled)
             {
                 RuleFor(x => x.CountryId)
@@ -75,13 +78,27 @@ namespace Nop.Web.Validators.Common
             {
                 RuleFor(x => x.City).NotEmpty().WithMessage(localizationService.GetResource("Account.Fields.City.Required"));
             }
-            if (addressSettings.PhoneRequired && addressSettings.PhoneEnabled)
+            if (addressSettings.PhoneEnabled)
             {
-                RuleFor(x => x.PhoneNumber).NotEmpty().WithMessage(localizationService.GetResource("Account.Fields.Phone.Required"));
+                RuleFor(x => x.PhoneNumber).Matches(@"(^[0]{1}[89]{1}[0-9]{8}$)|(^[0]{1}[1]{1}[0-9]{9}$)|(^[0]{1}[2]{1}[0-9]{8,9}$)").WithMessage(localizationService.GetResource("Account.Fields.Phone.WrongPhoneNumber"));
+                if (addressSettings.PhoneRequired)
+                {
+                    RuleFor(x => x.PhoneNumber).NotEmpty().WithMessage(localizationService.GetResource("Account.Fields.Phone.Required"));
+                }
             }
-            if (addressSettings.FaxRequired && addressSettings.FaxEnabled)
+
+            if (addressSettings.FaxEnabled)
             {
-                RuleFor(x => x.FaxNumber).NotEmpty().WithMessage(localizationService.GetResource("Account.Fields.Fax.Required"));
+                RuleFor(x => x.FaxNumber).Matches(@"^[0]{1}[2]{1}[0-9]{8,9}$").WithMessage(localizationService.GetResource("Account.Fields.Fax.WrongFaxNumber"));
+                if (addressSettings.FaxRequired)
+                {
+                    RuleFor(x => x.FaxNumber).NotEmpty().WithMessage(localizationService.GetResource("Account.Fields.Fax.Required"));
+                }
+            }
+
+            if (addressSettings.StateProvinceRequired && addressSettings.StateProvinceEnabled)
+            {
+                RuleFor(x => x.StateProvinceId).NotEmpty().WithMessage(localizationService.GetResource("Account.Fields.StateProvince.Required"));
             }
         }
     }

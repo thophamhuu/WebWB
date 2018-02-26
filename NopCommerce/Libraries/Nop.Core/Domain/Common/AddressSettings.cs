@@ -59,6 +59,7 @@ namespace Nop.Core.Domain.Common
         /// Gets or sets a value indicating whether 'State / province' is enabled
         /// </summary>
         public bool StateProvinceEnabled { get; set; }
+        public bool StateProvinceRequired { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether 'Phone number' is enabled

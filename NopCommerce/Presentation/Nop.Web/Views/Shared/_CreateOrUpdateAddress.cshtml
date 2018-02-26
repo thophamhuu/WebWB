@@ -78,6 +78,10 @@
         <div class="inputs">
             @Html.LabelFor(model => model.StateProvinceId, new { }, ":")
                 @Html.DropDownListFor(model => model.StateProvinceId, Model.AvailableStates)
+            @if (Model.StateProvinceRequired)
+            {
+                @Html.RequiredHint()
+            }
             <span id="states-loading-progress" style="display: none;" class="please-wait">@T("Common.Wait...")</span>
             @Html.ValidationMessageFor(model => model.StateProvinceId)
         </div>

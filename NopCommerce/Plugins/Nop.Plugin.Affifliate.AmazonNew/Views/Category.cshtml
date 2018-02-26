@@ -1,0 +1,287 @@
+﻿@using Nop.Core.Infrastructure;
+@{
+    Layout = "~/Administration/Views/Shared/_AdminLayout.cshtml";
+    var defaultGridPageSize = EngineContext.Current.Resolve<Nop.Core.Domain.Common.AdminAreaSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<Nop.Core.Domain.Common.AdminAreaSettings>().GridPageSizes;
+    var categories = ViewBag.Categories as List<SelectListItem>;
+    Html.SetActiveMenuItemSystemName("Affiliate.Plugins.Amazon.Category");
+}
+@model Nop.Plugin.Affiliate.Amazon.Models.CategorySearch
+@{
+
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            @T("Nop.Plugin.Affiliate.Amazon.Category")
+        </h1>
+        <div class="pull-right">
+            <button type="button" name="importexcel" class="btn bg-olive" data-toggle="modal" data-target="#importexcel-window">
+                <i class="fa fa-upload"></i>
+                @T("Admin.Common.Import")
+            </button>
+
+            <button type="button" name="sync" class="btn bg-green" onclick="syncCategories()">
+                <i class="fa fa-refresh"></i>
+                @T("Nop.Plugin.Affiliate.Amazon.Sync")
+            </button>
+        </div>
+    </div>
+    <div class="content">
+        <div class="form-horizontal">
+
+            <div class="panel-group">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        @using (Html.BeginForm("Category", "AffiliateAmazon", null))
+                        {
+                            @Html.AntiForgeryToken()
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.NopLabelFor(model => model.BrowseNodeId)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.NopEditorFor(model => model.BrowseNodeId)
+                                    @Html.ValidationMessageFor(model => model.BrowseNodeId)
+                                </div>
+                            </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.NopLabelFor(model => model.CategoryName)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.NopEditorFor(model => model.CategoryName)
+                                        @Html.ValidationMessageFor(model => model.CategoryName)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.NopLabelFor(model => model.CompareType)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.NopDropDownListFor(model => model.CompareType, Model.CompareTypes, new { @class = "select2" })
+                                        @Html.ValidationMessageFor(model => model.CompareType)
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        &nbsp;
+                                    </div>
+                                    <div class="col-md-9">
+                                        <input type="submit" id="sync" name="save" class="btn bg-blue" value="@T("Admin.Common.Search")" />
+                                    </div>
+                                </div>
+                        }
+                    </div>
+                    <div class="panel-body">
+
+                        <div id="categories-grid">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+        <div id="importexcel-window" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="importexcel-window-title">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="importexcel-window-title">@T("Admin.Common.ImportFromExcel")</h4>
+                    </div>
+                    @using (Html.BeginForm("ImportCategoryFromXlsx", "AffiliateAmazon", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                        <div class="form-horizontal">
+                            <div class="modal-body">
+                                @Html.AntiForgeryToken()
+                                <ul class="common-list">
+                                    <li>
+                                        <em>@T("Admin.Catalog.Categories.List.ImportFromExcelTip")</em>
+                                    </li>
+                                    <li>
+                                        <em>@T("Admin.Common.ImportFromExcel.ManyRecordsWarning")</em>
+                                    </li>
+                                </ul>
+                                <div class="form-group">
+                                    <div class="col-md-2">
+                                        <div class="label-wrapper">
+                                            <label class="control-label">
+                                                @T("Admin.Common.ExcelFile")
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-10">
+                                        <input type="file" id="importexcelfile" name="importexcelfile" class="form-control" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">
+                                    @T("Admin.Common.ImportFromExcel")
+                                </button>
+                            </div>
+                        </div>
+                    }
+
+                </div>
+            </div>
+        </div>
+        <div id="sync-window" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="importexcel-window-title">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="sync-window-title">@T("Admin.Common.ImportFromExcel")</h4>
+                    </div>
+                    @using (Html.BeginForm("SyncCategory", "AffiliateAmazon", FormMethod.Post))
+            {
+                        <div class="form-horizontal">
+                            <div class="modal-body">
+                                @Html.AntiForgeryToken()
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">
+                                    @T("Nop.Plugin.Affiliate.Amazon.Sync")
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+
+        <script>
+        var categories = [{'value':0,'text':'No map'}];
+        @if (categories != null)
+        {
+            foreach(var cate in categories)
+            {
+                @Html.Raw("categories.push({\"value\":" + cate.Value + ",\"text\":\"" + cate.Text + "\"});\n");
+            }
+        }
+        $(document).ready(function () {
+            $("#categories-grid").kendoGrid({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: "@Url.Action("ReadCategory","AffiliateAmazon")",
+                            dataType: "json",
+                            type: "POST",
+                            data: {
+                                BrowseNodeId: '@Model.BrowseNodeId',
+                                CategoryName: '@Model.CategoryName',
+                                CompareType:@Model.CompareType
+                            }
+                        },
+                        update: {
+                            url:"@Url.Action("MapCategory","AffiliateAmazon")",
+                            dataType: "json",
+                            type: "POST"
+                        },
+                        destroy: {
+                            url:"@Url.Action("RemoveMapCategory","AffiliateAmazon")",
+                            dataType: "json",
+                            type: "POST"
+                        },
+                    },
+                    schema: {
+                        data:"data",
+                        total: "totalCount",
+                        model: {
+                            id: "Id",
+                            fields: {
+                                Id: { editable: false, nullable: true },
+                                BrowseNodeID: { editable: false, nullable: true },
+                                Name: { editable: false, nullable: true },
+                                CategoryID: { field: "CategoryID", type: "number", defaultValue: 1 },
+                                CategoryMapID: { editable: false, type: "number", nullable: true },
+                            }
+                        }
+                    },
+                    pageSize: @defaultGridPageSize,
+                    serverPaging: true,
+                    serverSorting: true,
+                    sort: { field: 'Name', dir: 'asc' },
+                },
+                //height: 550,
+                groupable: true,
+                sortable: true,
+                pageable: {
+                    refresh: true,
+                    pageSizes: [@(gridPageSizes)],
+                                },
+                filterable: {
+                    extra: false,
+                    mode: "row",
+                    operators: {
+                        string: {
+                            contains:"Contains",
+                            startswith: "Starts with",
+                            eq: "Is equal to",
+                            neq: "Is not equal to"
+                        }
+                    }
+                },
+                columns: [
+                   {
+                       field: "Name",
+                       title: "@T("Nop.Plugin.Affiliate.Amazon.Category.Name")",
+                       filterable: {
+                           cell: {
+                               operator: "contains",
+                               suggestionOperator: "contains"
+                           }
+                       },
+                       width: 200
+                   },
+                   {
+                       field: "CategoryID", width: "200px", values: categories, title: "Category",
+                       filterable: {
+                           cell: {
+                               operator: "eq",
+                               suggestionOperator: "eq"
+                           }
+                       },
+                       width: 200
+                   },
+                   { command: [{text:"@T("Nop.Plugin.Affiliate.Amazon.Sync")", click:syncCategory},"edit"], title: " ", width: "100px"},
+                ],
+                editable: "inline"
+            });
+
+        });
+        function syncCategories() {
+            Sync(null,true);
+        }
+        function syncCategory(e) {
+            e.preventDefault();
+
+            var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
+            Sync(dataItem.BrowseNodeID,false);
+        }
+        function Sync(browseNodeID,reload) {
+            if (!window.confirm("@T("Confirm!")"))
+                return false;
+            var grid = $('#categories-grid').data('kendoGrid');
+            $.ajax({
+                type: "Post",
+                url:'@Url.Action("SyncCategory","AffiliateAmazon",new { area="Admin"})',
+                data: {browseNodeID },
+                dataType: "json",
+                success: function (data) {
+                    if(reload)
+                    grid.dataSource.read();
+                }
+            })
+            }
+        </script>
+
+
+}
+
+
+<div id="bg" style="display:none;position:fixed;height:100%;width:100%;z-index:10000;background:rgba(0,0,0,.8);top:0;left:0;">
+    <span style="font-size:50px;background:#ddd;color:#333; padding:10px; position:absolute;top:50%;left:50%;display:block;margin-top:-45px;margin-left:-140px"><i class="fa fa-spin fa-spinner"></i> Syncing...</span>
+</div>

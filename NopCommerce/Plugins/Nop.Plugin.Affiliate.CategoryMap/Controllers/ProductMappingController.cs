@@ -83,6 +83,7 @@ namespace Nop.Plugin.Affiliate.CategoryMap.Controllers
         {
             var isAffiliate = false;
             string shippingDescriptions = "";
+            
             if (productId > 0)
             {
                 var productMapping = _productMappingRepository.TableNoTracking.FirstOrDefault(x => x.ProductId == productId);
@@ -90,7 +91,7 @@ namespace Nop.Plugin.Affiliate.CategoryMap.Controllers
                 {
                     ProductMappingSettings productMappingSettings = _settingService.LoadSetting<ProductMappingSettings>();
                     isAffiliate = true;
-                    shippingDescriptions = productMappingSettings.ShippingDescriptions;
+                    shippingDescriptions = _localizationService.GetResource("Nop.Plugin.Affiliate.ProductMapping.ShippingDescription");
                 }
             }
             return Json(new { IsAffiliate = isAffiliate, ShippingDescriptions = shippingDescriptions });

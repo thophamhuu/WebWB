@@ -275,6 +275,7 @@
     <Compile Include="Messages\MessageTemplateExtensions.cs" />
     <Compile Include="Models\Requests\InsertOrderRequest.cs" />
     <Compile Include="Models\Responses\AddToCartResponse.cs" />
+    <Compile Include="Models\Responses\PlaceOrderResponse.cs" />
     <Compile Include="Models\Responses\SearchProductsResponse.cs" />
     <Compile Include="Models\Responses\UpdateShoppingCartItemResponse.cs" />
     <Compile Include="Orders\UpdateOrderParameters.cs" />

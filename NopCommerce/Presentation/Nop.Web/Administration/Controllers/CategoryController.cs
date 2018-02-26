@@ -24,6 +24,9 @@ using Nop.Services.Vendors;
 using Nop.Web.Framework.Controllers;
 using Nop.Web.Framework.Kendoui;
 using Nop.Web.Framework.Mvc;
+using Nop.Core.Infrastructure;
+using Nop.Services.Configuration;
+using Nop.Core.Domain.Media;
 
 namespace Nop.Admin.Controllers
 {
@@ -402,6 +405,9 @@ namespace Nop.Admin.Controllers
                 //Stores
                 SaveStoreMappings(category, model);
 
+                //Thumbs
+                SaveThumbs(category);
+
                 //activity log
                 _customerActivityService.InsertActivity("AddNewCategory", _localizationService.GetResource("ActivityLog.AddNewCategory"), category.Name);
 
@@ -519,7 +525,8 @@ namespace Nop.Admin.Controllers
                 SaveCategoryAcl(category, model);
                 //Stores
                 SaveStoreMappings(category, model);
-
+                // Thumbs
+                SaveThumbs(category);
                 //activity log
                 _customerActivityService.InsertActivity("EditCategory", _localizationService.GetResource("ActivityLog.EditCategory"), category.Name);
 
@@ -798,5 +805,28 @@ namespace Nop.Admin.Controllers
         }
 
         #endregion
+
+        protected void SaveThumbs(Category category)
+        {
+            var picture = _pictureService.GetPictureById(category.PictureId);
+
+            List<int> sizeThumbs = new List<int>();
+            sizeThumbs.Add(0);
+            sizeThumbs.Add(100);
+            sizeThumbs.Add(290);
+            if (picture != null)
+            {
+                var _settingService = EngineContext.Current.Resolve<ISettingService>();
+                var mediaSettings = _settingService.LoadSetting<MediaSettings>();
+                if (mediaSettings != null)
+                {
+
+
+                    if (mediaSettings.CategoryThumbPictureSize > 0)
+                        sizeThumbs.Add(mediaSettings.CategoryThumbPictureSize);
+                    _pictureService.CreateThumbs(picture, sizeThumbs.ToArray());
+                }
+            }
+        }
     }
 }

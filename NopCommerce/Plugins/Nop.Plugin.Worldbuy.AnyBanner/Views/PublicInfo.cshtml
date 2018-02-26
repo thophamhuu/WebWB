@@ -17,7 +17,7 @@
                     var column_480 = banner.Settings.ColumnPerRow_480 != 0 ? "worldbuy-" + (((ColumnPerRow)banner.Settings.ColumnPerRow_480).ToString().ToLower()) + "_480" : "";
                     <div class="worldbuy-anybanner-item @column_1280 @column_1000 @column_768 @column_480">
                         <a href="@item.Url" title="@item.Title">
-                            <img src="@item.ImageUrl" alt="@item.Alt" />
+                            <img src="@item.FullImageUrl" alt="@item.Alt" />
                         </a>
                     </div>
                 }

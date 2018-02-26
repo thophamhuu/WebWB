@@ -3,6 +3,7 @@ using Nop.Core;
 using Nop.Core.Data;
 using Nop.Core.Domain.Configuration;
 using Nop.Core.Domain.Localization;
+using Nop.Core.Infrastructure;
 using Nop.Core.Plugins;
 using Nop.Plugin.Worldbuy.AnyBanner.Domain;
 using Nop.Plugin.Worldbuy.AnyBanner.Models;
@@ -10,6 +11,7 @@ using Nop.Plugin.Worldbuy.AnyBanner.Services;
 using Nop.Plugin.Worldbuy.Models;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
+using Nop.Services.Media;
 using Nop.Services.Stores;
 using Nop.Web.Framework.Controllers;
 using System;
@@ -289,7 +291,7 @@ namespace Nop.Plugin.Worldbuy.AnyBanner.Controllers
         [HttpPost]
         public ActionResult Items(int bannerId)
         {
-            var model = _AnyBannerItemService.GetAllModelsByBannerId(bannerId);
+            var model = _AnyBannerItemService.GetAllModelsByBannerId(bannerId).Select(x => x.ToModel()).ToList();
             if (model != null)
             {
                 return Json(model);
@@ -306,6 +308,7 @@ namespace Nop.Plugin.Worldbuy.AnyBanner.Controllers
                 {
                     BannerID = bannerId,
                     IsActived = true,
+                    PictureId=0,
                 };
 
                 model = newItem;
@@ -317,7 +320,7 @@ namespace Nop.Plugin.Worldbuy.AnyBanner.Controllers
                 model.BannerID = item.BannerID;
                 model.Title = item.Title;
                 model.Url = item.Url;
-                model.ImageUrl = item.ImageUrl;
+                model.PictureId = item.PictureId;
                 model.IsActived = item.IsActived;
             }
             return PartialView("~/Plugins/Worldbuy.AnyBanner/Views/_CreateOrUpdate.Item.cshtml", model);
@@ -328,48 +331,28 @@ namespace Nop.Plugin.Worldbuy.AnyBanner.Controllers
         {
             bool status = false;
             string message = "Error";
-            string fileName = "";
             if (ModelState.IsValid)
             {
                 try
                 {
                     if (model.Id == 0)
                     {
-                        if (Request.Files != null && Request.Files.Count > 0)
+                        var url = model.Url;
+                        var webHelper = EngineContext.Current.Resolve<Nop.Core.IWebHelper>();
+                        var storeUrl = webHelper.GetStoreLocation();
+                        url = url.Replace(storeUrl, "/");
+                        var entity = new WB_AnyBannerItem
                         {
-                            for (int i = 0; i < Request.Files.Count; i++)
-                            {
-                                HttpPostedFileBase file = Request.Files[i];
-                                if (file != null && file.ContentLength > 0)
-                                {
-                                    var folder = "~/Content/Images/Worldbuy.AnyBanner/Images";
-                                    var folderPath = Server.MapPath(folder);
-                                    if (!System.IO.Directory.Exists(folderPath))
-                                        System.IO.Directory.CreateDirectory(folderPath);
+                            BannerID = model.BannerID,
+                            Id = 0,
+                            IsActived = model.IsActived,
+                            Title = model.Title,
+                            Url = url,
+                            Alt = model.Alt,
+                            PictureId = model.PictureId
+                        };
+                        _AnyBannerItemRepo.Insert(entity);
 
-                                    var entity = new WB_AnyBannerItem
-                                    {
-                                        BannerID = model.BannerID,
-                                        Id = 0,
-                                        IsActived = model.IsActived,
-                                        Title = model.Title,
-                                        Url = model.Url,
-                                        Alt=model.Alt,
-                                        
-                                    };
-                                    _AnyBannerItemRepo.Insert(entity);
-                                    if (entity.Id > 0)
-                                    {
-                                        fileName = folder + "/" + entity.Id.ToString("000000") + System.IO.Path.GetExtension(file.FileName);
-                                        entity.ImageUrl = Url.Content(fileName);
-                                        _AnyBannerItemRepo.Update(entity);
-                                        string filePath = Server.MapPath(fileName);
-                                        file.SaveAs(filePath);
-                                    }
-
-                                }
-                            }
-                        }
                         status = true;
                         message = "Success";
                     }
@@ -383,9 +366,10 @@ namespace Nop.Plugin.Worldbuy.AnyBanner.Controllers
                             entity.IsActived = model.IsActived;
                             entity.Alt = model.Alt;
                             entity.Order = model.Order;
+                            entity.PictureId = model.PictureId;
                             _AnyBannerItemRepo.Update(entity);
                         }
-                        model = _AnyBannerItemService.GetModelById(model.Id);
+                        model = entity.ToModel();
                         return Json(model);
                     }
                 }
@@ -395,8 +379,6 @@ namespace Nop.Plugin.Worldbuy.AnyBanner.Controllers
                     LogException(ex);
                 }
             }
-
-
             return Json(new { Status = status, Message = message });
         }
         [AdminAuthorize]
@@ -408,16 +390,10 @@ namespace Nop.Plugin.Worldbuy.AnyBanner.Controllers
             bool status = false;
             if (entity != null)
             {
-                string fileName = entity.ImageUrl;
                 try
                 {
                     _AnyBannerItemRepo.Delete(entity);
                     status = true;
-                    if (!String.IsNullOrEmpty(fileName) || !String.IsNullOrWhiteSpace(fileName))
-                    {
-                        string filePath = Server.MapPath(fileName);
-                        System.IO.File.Delete(filePath);
-                    }
                 }
                 catch (Exception ex)
                 {
@@ -431,7 +407,7 @@ namespace Nop.Plugin.Worldbuy.AnyBanner.Controllers
         public ActionResult PublicInfo(string widgetZone)
         {
             var storeScope = this.GetActiveStoreScopeConfiguration(_storeService, _workContext);
-            var banners = _AnyBannerService.GetAllModels(widgetZone,true);
+            var banners = _AnyBannerService.GetAllModels(widgetZone, true);
             var model = banners.ToList();
             model.ForEach(x =>
             {

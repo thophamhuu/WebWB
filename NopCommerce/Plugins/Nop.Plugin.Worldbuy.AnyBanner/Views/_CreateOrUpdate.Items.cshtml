@@ -56,7 +56,7 @@
                 },
                 columns: [
                     {
-                        template: "<div class='item-icon' style='width:50px;height:50px;display:block'><img src='#:data.ImageUrl#'/></div>",
+                        template: "<div class='item-icon' style='height:50px;display:block'><img height='50' src='#:data.ImageUrl#'/></div>",
                         field: "ImageUrl",
                         title: "@T("Nop.Plugin.Worldbuy.AnyBanner.Item.Image")",
                         width:100
@@ -127,52 +127,52 @@
             $.ajax({
                 type: "Post",
                 url:"@Url.Action("SaveItem", "AnyBanner",new { area="Admin"})",
-                    data: formData,
-                    contentType: false,
-                    processData: false,
-                    success: function (data) {
-                        var grid = $("#AnyBannerItems-grid").data('kendoGrid');
-                        grid.dataSource.read();
-                        LoadItem(@Model.Id,0);
-                    }
-                })
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function (data) {
+                    var grid = $("#AnyBannerItems-grid").data('kendoGrid');
+                    grid.dataSource.read();
+                    LoadItem(@Model.Id,0);
+                }
             })
-        });
+        })
+    });
 
-        function editItem(e) {
-            e.preventDefault();
-            var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
-            LoadItem( @Model.Id, dataItem.Id);
+    function editItem(e) {
+        e.preventDefault();
+        var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
+        LoadItem( @Model.Id, dataItem.Id);
 
     }
 
-        function deleteItem(e) {
-            if (!window.confirm("@T("Nop.Plugin.Worldbuy.Confirm")!"))
-                return false;
-            e.preventDefault();
-            var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
-            $.ajax({
-                type: "Post",
-                url: "@Url.Action("DeleteItem","AnyBanner",new { area="Admin"})",
-                data: { Id: dataItem.Id },
-                dataType: "json",
-                success: function (data) {
-                    if (data.Status) {
-                        var grid = $("#AnyBannerItems-grid").data('kendoGrid');
-                        grid.dataSource.read();
-                    }
-                }
-            })
-
-        }
-        function LoadItem(bannerId, id) {
+    function deleteItem(e) {
+        if (!window.confirm("@T("Nop.Plugin.Worldbuy.Confirm")!"))
+            return false;
+        e.preventDefault();
+        var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
         $.ajax({
-                    type: "Get",
-                    url:"@Url.Action("Item", "AnyBanner",new { area="Admin"})",
-                    data: { id, bannerId},
-                    dataType:"html",
-                    success: function (data) {
-                        var grid = $("#item").html(data);
-                    }
-                })}
+            type: "Post",
+            url: "@Url.Action("DeleteItem","AnyBanner",new { area="Admin"})",
+            data: { Id: dataItem.Id },
+            dataType: "json",
+            success: function (data) {
+                if (data.Status) {
+                    var grid = $("#AnyBannerItems-grid").data('kendoGrid');
+                    grid.dataSource.read();
+                }
+            }
+        })
+
+    }
+    function LoadItem(bannerId, id) {
+        $.ajax({
+            type: "Get",
+            url:"@Url.Action("Item", "AnyBanner",new { area="Admin"})",
+            data: { id, bannerId},
+            dataType:"html",
+            success: function (data) {
+                var grid = $("#item").html(data);
+            }
+        })}
 </script>

@@ -20,6 +20,11 @@ namespace Nop.Services.Tax
         /// Gets or sets a tax rate
         /// </summary>
         public decimal TaxRate { get; set; }
+
+        /// <summary>
+        /// Gets or sets a Tax Category Id
+        /// </summary>
+        public int TaxCategoryId { get; set; }
         /// <summary>
         /// Gets or sets errors
         /// </summary>

@@ -6113,6 +6113,7 @@ namespace Nop.Services.Installation
                 CityRequired = true,
                 CountryEnabled = true,
                 StateProvinceEnabled = true,
+                StateProvinceRequired = true,
                 PhoneEnabled = true,
                 PhoneRequired = true,
                 FaxEnabled = true,

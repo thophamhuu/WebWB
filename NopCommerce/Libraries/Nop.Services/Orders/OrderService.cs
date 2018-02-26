@@ -14,7 +14,7 @@ namespace Nop.Services.Orders
     /// <summary>
     /// Order service
     /// </summary>
-    public partial class OrderService :ApiService, IOrderService
+    public partial class OrderService : ApiService, IOrderService
     {
         #region Fields
 
@@ -45,7 +45,7 @@ namespace Nop.Services.Orders
             IRepository<OrderNote> orderNoteRepository,
             IRepository<Product> productRepository,
             IRepository<RecurringPayment> recurringPaymentRepository,
-            IRepository<Customer> customerRepository, 
+            IRepository<Customer> customerRepository,
             IEventPublisher eventPublisher)
         {
             this._orderRepository = orderRepository;
@@ -82,7 +82,7 @@ namespace Nop.Services.Orders
             {
                 return _orderRepository.GetById(orderId);
             }
-            
+
         }
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace Nop.Services.Orders
         {
             if (string.IsNullOrEmpty(customOrderNumber))
                 return null;
-           
+
             return _orderRepository.Table.FirstOrDefault(o => o.CustomOrderNumber == customOrderNumber);
         }
 
@@ -212,7 +212,7 @@ namespace Nop.Services.Orders
                     .Any(orderItem =>
                         //"Use multiple warehouses" enabled
                         //we search in each warehouse
-                        (orderItem.Product.ManageInventoryMethodId == manageStockInventoryMethodId && 
+                        (orderItem.Product.ManageInventoryMethodId == manageStockInventoryMethodId &&
                         orderItem.Product.UseMultipleWarehouses &&
                         orderItem.Product.ProductWarehouseInventory.Any(pwi => pwi.WarehouseId == warehouseId))
                         ||
@@ -261,74 +261,7 @@ namespace Nop.Services.Orders
             if (order == null)
                 throw new ArgumentNullException("order");
 
-            if (CheckUseApi)
-            {
-                var request = new InsertOrderRequest
-                {
-                    StoreId = order.StoreId,
-                    OrderGuid = order.OrderGuid,
-                    CustomerId = order.CustomerId,
-                    CustomerLanguageId = order.CustomerLanguageId,
-                    CustomerTaxDisplayType = order.CustomerTaxDisplayType,
-                    CustomerIp = order.CustomerIp,
-                    OrderSubtotalInclTax = order.OrderSubtotalInclTax,
-                    OrderSubtotalExclTax = order.OrderSubtotalExclTax,
-                    OrderSubTotalDiscountInclTax = order.OrderSubTotalDiscountInclTax,
-                    OrderSubTotalDiscountExclTax = order.OrderSubTotalDiscountExclTax,
-                    OrderShippingInclTax = order.OrderShippingInclTax,
-                    OrderShippingExclTax = order.OrderShippingExclTax,
-                    PaymentMethodAdditionalFeeInclTax = order.PaymentMethodAdditionalFeeInclTax,
-                    PaymentMethodAdditionalFeeExclTax = order.PaymentMethodAdditionalFeeExclTax,
-                    TaxRates = order.TaxRates,
-                    OrderTax = order.OrderTax,
-                    OrderTotal = order.OrderTotal,
-                    RefundedAmount = decimal.Zero,
-                    OrderDiscount = order.OrderDiscount,
-                    CheckoutAttributeDescription = order.CheckoutAttributeDescription,
-                    CheckoutAttributesXml = order.CheckoutAttributesXml,
-                    CustomerCurrencyCode = order.CustomerCurrencyCode,
-                    CurrencyRate = order.CurrencyRate,
-                    AffiliateId = order.AffiliateId,
-                    OrderStatus = OrderStatus.Pending,
-                    AllowStoringCreditCardNumber = order.AllowStoringCreditCardNumber,
-                    CardType = order.CardType,
-                    CardName = order.CardName,
-                    CardNumber = order.CardNumber,
-                    MaskedCreditCardNumber = order.MaskedCreditCardNumber,
-                    CardCvv2 = order.CardCvv2,
-                    CardExpirationMonth = order.CardExpirationMonth,
-                    CardExpirationYear = order.CardExpirationYear,
-                    PaymentMethodSystemName = order.PaymentMethodSystemName,
-                    AuthorizationTransactionId = order.AuthorizationTransactionId,
-                    AuthorizationTransactionCode = order.AuthorizationTransactionCode,
-                    AuthorizationTransactionResult = order.AuthorizationTransactionResult,
-                    CaptureTransactionId = order.CaptureTransactionId,
-                    CaptureTransactionResult = order.CaptureTransactionResult,
-                    SubscriptionTransactionId = order.SubscriptionTransactionId,
-                    PaymentStatus = order.PaymentStatus,
-                    PaidDateUtc = null,
-                    BillingAddressId = order.BillingAddressId,
-                    ShippingAddressId = order.ShippingAddressId,
-                    //BillingAddress = details.BillingAddress,
-                    //ShippingAddress = details.ShippingAddress,
-                    ShippingStatus = order.ShippingStatus,
-                    ShippingMethod = order.ShippingMethod,
-                    PickUpInStore = order.PickUpInStore,
-                    PickupAddressId = order.PickupAddressId,
-                    ShippingRateComputationMethodSystemName = order.ShippingRateComputationMethodSystemName,
-                    CustomValuesXml = order.CustomValuesXml,
-                    VatNumber = order.VatNumber,
-                    CreatedOnUtc = DateTime.UtcNow,
-                    CustomOrderNumber = string.Empty
-                };
-                var result  = APIHelper.Instance.PostAsync<Order>("Orders", "InsertOrder", (object)request);
-                order.Id = result.Id;
-            }
-            else
-            {
-                _orderRepository.Insert(order);
-            }
-            
+            _orderRepository.Insert(order);
 
             //event notification
             _eventPublisher.EntityInserted(order);
@@ -355,21 +288,21 @@ namespace Nop.Services.Orders
         /// <param name="authorizationTransactionId">Authorization transaction ID</param>
         /// <param name="paymentMethodSystemName">Payment method system name</param>
         /// <returns>Order</returns>
-        public virtual Order GetOrderByAuthorizationTransactionIdAndPaymentMethod(string authorizationTransactionId, 
+        public virtual Order GetOrderByAuthorizationTransactionIdAndPaymentMethod(string authorizationTransactionId,
             string paymentMethodSystemName)
-        { 
+        {
             var query = _orderRepository.Table;
             if (!String.IsNullOrWhiteSpace(authorizationTransactionId))
                 query = query.Where(o => o.AuthorizationTransactionId == authorizationTransactionId);
-            
+
             if (!String.IsNullOrWhiteSpace(paymentMethodSystemName))
                 query = query.Where(o => o.PaymentMethodSystemName == paymentMethodSystemName);
-            
+
             query = query.OrderByDescending(o => o.CreatedOnUtc);
             var order = query.FirstOrDefault();
             return order;
         }
-        
+
         #endregion
 
         #region Orders items
@@ -403,7 +336,7 @@ namespace Nop.Services.Orders
             var item = query.FirstOrDefault();
             return item;
         }
-        
+
         /// <summary>
         /// Gets all downloadable order items
         /// </summary>
@@ -504,7 +437,7 @@ namespace Nop.Services.Orders
             if (recurringPaymentId == 0)
                 return null;
 
-           return _recurringPaymentRepository.GetById(recurringPaymentId);
+            return _recurringPaymentRepository.GetById(recurringPaymentId);
         }
 
         /// <summary>

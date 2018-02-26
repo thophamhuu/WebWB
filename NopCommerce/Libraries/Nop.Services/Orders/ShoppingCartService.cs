@@ -1256,38 +1256,40 @@ namespace Nop.Services.Orders
                 }
                 if (quantity > 0)
                 {
-                    //check warnings
-                    warnings.AddRange(GetShoppingCartItemWarnings(customer, shoppingCartItem.ShoppingCartType,
-                        shoppingCartItem.Product, shoppingCartItem.StoreId,
-                        attributesXml, customerEnteredPrice,
-                        rentalStartDate, rentalEndDate, quantity, false));
-                    if (!warnings.Any())
+                    if (CheckUseApi)
                     {
-                        if (CheckUseApi)
+                        int customerId = customer.Id;
+                        var body = new
                         {
-                            int customerId = customer.Id;
-                            var body = new
-                            {
-                                customerId,
-                                shoppingCartItemId,
-                                attributesXml,
-                                customerEnteredPrice,
-                                rentalStartDate,
-                                rentalEndDate,
-                                quantity,
-                                resetCheckoutData
-                            };
-                            var response = APIHelper.Instance.PostAsync<UpdateShoppingCartItemResponse>("Orders", "UpdateShoppingCartItem", body);
+                            customerId,
+                            shoppingCartItemId,
+                            attributesXml,
+                            customerEnteredPrice,
+                            rentalStartDate,
+                            rentalEndDate,
+                            quantity,
+                            resetCheckoutData
+                        };
+                        var response = APIHelper.Instance.PostAsync<UpdateShoppingCartItemResponse>("Orders", "UpdateShoppingCartItem", body);
 
 
-                            //updated "HasShoppingCartItems" property used for performance optimization
-                            customer.HasShoppingCartItems = customer.ShoppingCartItems.Any();
-                            _customerService.UpdateCustomer(customer);
+                        //updated "HasShoppingCartItems" property used for performance optimization
+                       
+                        warnings = response.warnings.ToList();
 
-                            warnings = response.warnings.ToList();
-                        }
-                        else
+                        //event notification
+                        _eventPublisher.EntityUpdated(shoppingCartItem);
+                    }
+                    else
+                    {
+                        warnings.AddRange(GetShoppingCartItemWarnings(customer, shoppingCartItem.ShoppingCartType,
+                      shoppingCartItem.Product, shoppingCartItem.StoreId,
+                      attributesXml, customerEnteredPrice,
+                      rentalStartDate, rentalEndDate, quantity, false));
+
+                        if (!warnings.Any())
                         {
+
                             //if everything is OK, then update a shopping cart item
                             shoppingCartItem.Quantity = quantity;
                             shoppingCartItem.AttributesXml = attributesXml;
@@ -1301,8 +1303,11 @@ namespace Nop.Services.Orders
                             _eventPublisher.EntityUpdated(shoppingCartItem);
                         }
 
-                        
                     }
+
+                    //check warnings
+
+
                 }
                 else
                 {
@@ -1310,7 +1315,7 @@ namespace Nop.Services.Orders
                     DeleteShoppingCartItem(shoppingCartItem, resetCheckoutData, true);
                 }
             }
-            
+
 
 
             return warnings;
@@ -1363,7 +1368,26 @@ namespace Nop.Services.Orders
 
             }
         }
+        public IList<ShoppingCartItem> GetShoppingCartItems(Guid customerGuid)
+        {
+            if (customerGuid == Guid.Empty && customerGuid == null)
+                throw new ArgumentNullException("customerGuid");
+            if (CheckUseApi)
+            {
+                Dictionary<string, dynamic> parameters = new Dictionary<string, dynamic>();
+                parameters.Add("customerGuid", customerGuid);
+                return APIHelper.Instance.GetListAsync<ShoppingCartItem>("Orders", "GetShoppingCartItems", parameters);
+            }
+            else
+            {
 
+                var customer = _customerService.GetCustomerByGuid(customerGuid);
+                var shoppingCartItems = _sciRepository.Table.Where(x => x.Customer.CustomerGuid == customerGuid
+                && x.ShoppingCartTypeId == (int)ShoppingCartType.ShoppingCart
+                ).ToList();
+                return shoppingCartItems;
+            }
+        }
         #endregion
     }
 }

@@ -2,7 +2,10 @@
 using Nop.Core;
 using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Localization;
+using Nop.Core.Infrastructure;
+using Nop.Plugin.Worldbuy.AnyBanner.Domain;
 using Nop.Plugin.Worldbuy.Models;
+using Nop.Services.Media;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Mvc;
 using System;
@@ -25,6 +28,7 @@ namespace Nop.Plugin.Worldbuy.AnyBanner.Models
         public virtual List<WB_AnyBannerItemModel> Items { get; set; }
         public virtual List<SelectListItem> WidgetZones { get; set; }
         public virtual WB_ColumnOnRowModel Settings { get; set; }
-       
     }
+
+    
 }

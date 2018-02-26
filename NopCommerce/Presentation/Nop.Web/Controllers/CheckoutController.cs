@@ -868,7 +868,6 @@ namespace Nop.Web.Controllers
 
             if (_workContext.CurrentCustomer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed)
                 return new HttpUnauthorizedResult();
-
             //model
             var model = _checkoutModelFactory.PrepareConfirmOrderModel(cart);
             try
@@ -920,6 +919,7 @@ namespace Nop.Web.Controllers
                 _logger.Warning(exc.Message, exc);
                 model.Warnings.Add(exc.Message);
             }
+            TempData["Warnings"] = model.Warnings;
             return RedirectToRoute("CheckoutConfirm");
             //If we got this far, something failed, redisplay form
             //return View(model);
@@ -942,6 +942,8 @@ namespace Nop.Web.Controllers
 
             //model
             var model = _checkoutModelFactory.PrepareConfirmOrderModel(cart);
+            if (TempData["Warnings"] != null)
+                model.Warnings = TempData["Warnings"] as IList<string>;
             return View(model);
         }
 

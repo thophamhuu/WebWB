@@ -49,7 +49,6 @@ namespace Nop.Plugin.Worldbuy.StateProvinceWB.Services
             var stateProvinces = this.GetStateProvincesByCountryId(countryId);
             if (stateProvinces != null)
             {
-                int i = 0;
                 stateProvinces.ToList().ForEach(x =>
                 {
                     var item = this.GetStateProvinceWBModelByStateProvinceId(x.Id);

@@ -14,6 +14,8 @@ using Nop.Core.Plugins;
 using Nop.Services.Common;
 using Nop.Services.Directory;
 using Nop.Services.Logging;
+using Nop.Core.Infrastructure;
+using Nop.Services.Configuration;
 
 namespace Nop.Services.Tax
 {
@@ -218,7 +220,7 @@ namespace Nop.Services.Tax
                     calculateTaxRequest.Address = _addressService.GetAddressById(_taxSettings.DefaultTaxAddressId);
                     break;
             }
-            
+
             return calculateTaxRequest;
         }
 
@@ -229,23 +231,39 @@ namespace Nop.Services.Tax
         /// <param name="percent">Percent</param>
         /// <param name="increase">Increase</param>
         /// <returns>New price</returns>
-        protected virtual decimal CalculatePrice(decimal price, decimal percent, bool increase)
+        protected virtual decimal CalculatePrice(int taxCategoryId, decimal price, decimal percent, bool increase, int quantity = 1)
         {
             if (percent == decimal.Zero)
                 return price;
-
+            var _settingService = EngineContext.Current.Resolve<ISettingService>();
+            bool isAbsolute = _settingService.GetSettingByKey<bool>(string.Format("Tax.Worldbuy.TaxProvider.FixedOrByCountryStateZip.TaxCategoryId{0}.IsAbsolute", taxCategoryId));
             decimal result;
-            if (increase)
+            if (!isAbsolute)
             {
-                result = price * (1 + percent / 100);
+                if (increase)
+                {
+                    result = price + price * percent / 100;
+                }
+                else
+                {
+                    result = price - (price) / (100 + percent) * percent;
+                }
+
             }
             else
             {
-                result = price - (price) / (100 + percent) * percent;
+                if (increase)
+                {
+                    result = price + percent * quantity;
+                }
+                else
+                {
+                    result = price - percent * quantity;
+                }
             }
+
             return result;
         }
-
         /// <summary>
         /// Gets tax rate
         /// </summary>
@@ -255,12 +273,52 @@ namespace Nop.Services.Tax
         /// <param name="price">Price (taxable value)</param>
         /// <param name="taxRate">Calculated tax rate</param>
         /// <param name="isTaxable">A value indicating whether a request is taxable</param>
-        protected virtual void GetTaxRate(Product product, int taxCategoryId, 
+        protected virtual int GetTaxCategoryId(Product product, Customer customer,decimal price)
+        {
+            int taxCategoryId = 0;
+            //active tax provider
+            var activeTaxProvider = LoadActiveTaxProvider(customer);
+            if (activeTaxProvider == null)
+                return 0;
+
+            //tax request
+            var calculateTaxRequest = CreateCalculateTaxRequest(product, taxCategoryId, customer, price);
+
+            //get tax rate
+            var calculateTaxResult = activeTaxProvider.GetTaxRate(calculateTaxRequest);
+            if (calculateTaxResult.Success)
+            {
+                //ensure that tax is equal or greater than zero
+                if (calculateTaxResult.TaxRate < decimal.Zero)
+                    calculateTaxResult.TaxRate = decimal.Zero;
+
+                taxCategoryId = calculateTaxResult.TaxCategoryId;
+            }
+            else
+                if (_taxSettings.LogErrors)
+            {
+                foreach (var error in calculateTaxResult.Errors)
+                {
+                    _logger.Error(string.Format("{0} - {1}", activeTaxProvider.PluginDescriptor.FriendlyName, error), null, customer);
+                }
+            }
+            return taxCategoryId;
+        }
+        /// <summary>
+        /// Gets tax rate
+        /// </summary>
+        /// <param name="product">Product</param>
+        /// <param name="taxCategoryId">Tax category identifier</param>
+        /// <param name="customer">Customer</param>
+        /// <param name="price">Price (taxable value)</param>
+        /// <param name="taxRate">Calculated tax rate</param>
+        /// <param name="isTaxable">A value indicating whether a request is taxable</param>
+        protected virtual void GetTaxRate(Product product, int taxCategoryId,
             Customer customer, decimal price, out decimal taxRate, out bool isTaxable)
         {
             taxRate = decimal.Zero;
             isTaxable = true;
-
+            taxCategoryId = 0;
             //active tax provider
             var activeTaxProvider = LoadActiveTaxProvider(customer);
             if (activeTaxProvider == null)
@@ -275,7 +333,7 @@ namespace Nop.Services.Tax
                 isTaxable = false;
             }
             //make EU VAT exempt validation (the European Union Value Added Tax)
-            if (isTaxable && 
+            if (isTaxable &&
                 _taxSettings.EuVatEnabled &&
                 IsVatExempt(calculateTaxRequest.Address, calculateTaxRequest.Customer))
             {
@@ -290,17 +348,18 @@ namespace Nop.Services.Tax
                 //ensure that tax is equal or greater than zero
                 if (calculateTaxResult.TaxRate < decimal.Zero)
                     calculateTaxResult.TaxRate = decimal.Zero;
-                
+
                 taxRate = calculateTaxResult.TaxRate;
+                taxCategoryId = calculateTaxResult.TaxCategoryId;
             }
-            else 
+            else
                 if (_taxSettings.LogErrors)
+            {
+                foreach (var error in calculateTaxResult.Errors)
                 {
-                    foreach (var error in calculateTaxResult.Errors)
-                    {
-                        _logger.Error(string.Format("{0} - {1}", activeTaxProvider.PluginDescriptor.FriendlyName, error), null, customer);
-                    }
-                }   
+                    _logger.Error(string.Format("{0} - {1}", activeTaxProvider.PluginDescriptor.FriendlyName, error), null, customer);
+                }
+            }
         }
 
         #endregion
@@ -357,13 +416,26 @@ namespace Nop.Services.Tax
         /// <param name="price">Price</param>
         /// <param name="taxRate">Tax rate</param>
         /// <returns>Price</returns>
-        public virtual decimal GetProductPrice(Product product, decimal price, 
+        public virtual decimal GetProductPrice(Product product, decimal price,
             out decimal taxRate)
         {
             var customer = _workContext.CurrentCustomer;
             return GetProductPrice(product, price, customer, out taxRate);
         }
-        
+
+        /// <summary>
+        /// Gets price
+        /// </summary>
+        /// <param name="product">Product</param>
+        /// <param name="price">Price</param>
+        /// <param name="taxRate">Tax rate</param>
+        /// <returns>Price</returns>
+        public virtual decimal GetProductPrice(Product product, decimal price,
+            out decimal taxRate, int quantity)
+        {
+            var customer = _workContext.CurrentCustomer;
+            return GetProductPrice(product, price, customer, out taxRate, quantity);
+        }
         /// <summary>
         /// Gets price
         /// </summary>
@@ -378,7 +450,20 @@ namespace Nop.Services.Tax
             bool includingTax = _workContext.TaxDisplayType == TaxDisplayType.IncludingTax;
             return GetProductPrice(product, price, includingTax, customer, out taxRate);
         }
-
+        /// <summary>
+        /// Gets price
+        /// </summary>
+        /// <param name="product">Product</param>
+        /// <param name="price">Price</param>
+        /// <param name="customer">Customer</param>
+        /// <param name="taxRate">Tax rate</param>
+        /// <returns>Price</returns>
+        public virtual decimal GetProductPrice(Product product, decimal price,
+            Customer customer, out decimal taxRate, int quantity)
+        {
+            bool includingTax = _workContext.TaxDisplayType == TaxDisplayType.IncludingTax;
+            return GetProductPrice(product, price, includingTax, customer, out taxRate, quantity);
+        }
         /// <summary>
         /// Gets price
         /// </summary>
@@ -393,10 +478,26 @@ namespace Nop.Services.Tax
         {
             bool priceIncludesTax = _taxSettings.PricesIncludeTax;
             int taxCategoryId = 0;
-            return GetProductPrice(product, taxCategoryId, price, includingTax, 
+            return GetProductPrice(product, taxCategoryId, price, includingTax,
                 customer, priceIncludesTax, out taxRate);
         }
-        
+        /// <summary>
+        /// Gets price
+        /// </summary>
+        /// <param name="product">Product</param>
+        /// <param name="price">Price</param>
+        /// <param name="includingTax">A value indicating whether calculated price should include tax</param>
+        /// <param name="customer">Customer</param>
+        /// <param name="taxRate">Tax rate</param>
+        /// <returns>Price</returns>
+        public virtual decimal GetProductPrice(Product product, decimal price,
+            bool includingTax, Customer customer, out decimal taxRate, int quantity)
+        {
+            bool priceIncludesTax = _taxSettings.PricesIncludeTax;
+            int taxCategoryId = 0;
+            return GetProductPrice(product, taxCategoryId, price, includingTax,
+                customer, priceIncludesTax, out taxRate, quantity);
+        }
         /// <summary>
         /// Gets price
         /// </summary>
@@ -412,6 +513,24 @@ namespace Nop.Services.Tax
             decimal price, bool includingTax, Customer customer,
             bool priceIncludesTax, out decimal taxRate)
         {
+            return GetProductPrice(product, taxCategoryId, price, includingTax,
+               customer, priceIncludesTax, out taxRate, 1);
+        }
+        /// <summary>
+        /// Gets price
+        /// </summary>
+        /// <param name="product">Product</param>
+        /// <param name="taxCategoryId">Tax category identifier</param>
+        /// <param name="price">Price</param>
+        /// <param name="includingTax">A value indicating whether calculated price should include tax</param>
+        /// <param name="customer">Customer</param>
+        /// <param name="priceIncludesTax">A value indicating whether price already includes tax</param>
+        /// <param name="taxRate">Tax rate</param>
+        /// <returns>Price</returns>
+        public virtual decimal GetProductPrice(Product product, int taxCategoryId,
+            decimal price, bool includingTax, Customer customer,
+            bool priceIncludesTax, out decimal taxRate, int quantity)
+        {
             //no need to calculate tax rate if passed "price" is 0
             if (price == decimal.Zero)
             {
@@ -419,10 +538,14 @@ namespace Nop.Services.Tax
                 return taxRate;
             }
 
+            if (taxCategoryId == 0)
+            {
+                taxCategoryId = GetTaxCategoryId(product, customer, price);
+            }
 
             bool isTaxable;
             GetTaxRate(product, taxCategoryId, customer, price, out taxRate, out isTaxable);
-
+            
             if (priceIncludesTax)
             {
                 //"price" already includes tax
@@ -433,13 +556,13 @@ namespace Nop.Services.Tax
                     {
                         //but our request is not taxable
                         //hence we should calculate price WITHOUT tax
-                        price = CalculatePrice(price, taxRate, false);
+                        price = CalculatePrice(taxCategoryId, price, taxRate, false, quantity);
                     }
                 }
                 else
                 {
                     //we should calculate price WITHOUT tax
-                    price = CalculatePrice(price, taxRate, false);
+                    price = CalculatePrice(taxCategoryId, price, taxRate, false, quantity);
                 }
             }
             else
@@ -451,7 +574,7 @@ namespace Nop.Services.Tax
                     //do it only when price is taxable
                     if (isTaxable)
                     {
-                        price = CalculatePrice(price, taxRate, true);
+                        price = CalculatePrice(taxCategoryId, price, taxRate, true, quantity);
                     }
                 }
             }
@@ -462,7 +585,7 @@ namespace Nop.Services.Tax
                 //we return 0% tax rate in case a request is not taxable
                 taxRate = decimal.Zero;
             }
-            
+
             //allowed to support negative price adjustments
             //if (price < decimal.Zero)
             //    price = decimal.Zero;
@@ -673,7 +796,7 @@ namespace Nop.Services.Tax
             if (String.IsNullOrWhiteSpace(fullVatNumber))
                 return VatNumberStatus.Empty;
             fullVatNumber = fullVatNumber.Trim();
-            
+
             //GB 111 1111 111 or GB 1111111111
             //more advanced regex - http://codeigniter.com/wiki/European_Vat_Checker
             var r = new Regex(@"^(\w{2})(.*)");
@@ -685,7 +808,7 @@ namespace Nop.Services.Tax
 
             return GetVatNumberStatus(twoLetterIsoCode, vatNumber, out name, out address);
         }
-        
+
         /// <summary>
         /// Gets VAT Number status
         /// </summary>
@@ -697,7 +820,7 @@ namespace Nop.Services.Tax
             string name, address;
             return GetVatNumberStatus(twoLetterIsoCode, vatNumber, out name, out address);
         }
-        
+
         /// <summary>
         /// Gets VAT Number status
         /// </summary>
@@ -838,7 +961,7 @@ namespace Nop.Services.Tax
 
             // VAT not chargeable if address, customer and config meet our VAT exemption requirements:
             // returns true if this customer is VAT exempt because they are shipping within the EU but outside our shop country, they have supplied a validated VAT number, and the shop is configured to allow VAT exemption
-            var customerVatStatus = (VatNumberStatus) customer.GetAttribute<int>(SystemCustomerAttributeNames.VatNumberStatusId);
+            var customerVatStatus = (VatNumberStatus)customer.GetAttribute<int>(SystemCustomerAttributeNames.VatNumberStatusId);
             return address.CountryId != _taxSettings.EuVatShopCountryId &&
                    customerVatStatus == VatNumberStatus.Valid &&
                    _taxSettings.EuVatAllowVatExemption;

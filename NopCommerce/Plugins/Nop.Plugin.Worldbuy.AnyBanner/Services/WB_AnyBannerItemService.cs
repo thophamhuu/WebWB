@@ -10,6 +10,8 @@ using Nop.Services.Configuration;
 using System.Web.Mvc;
 using System.Xml;
 using System.Web;
+using Nop.Core.Infrastructure;
+using Nop.Services.Media;
 
 namespace Nop.Plugin.Worldbuy.AnyBanner.Services
 {
@@ -28,41 +30,20 @@ namespace Nop.Plugin.Worldbuy.AnyBanner.Services
             this._AnyBannerItemRepo = AnyBannerItemRepo;
             this._AnyBannerRepo = AnyBannerRepo;
         }
-        public IList<WB_AnyBannerItemModel> GetAllModelsByBannerId(int bannerId)
+        public IList<WB_AnyBannerItem> GetAllModelsByBannerId(int bannerId)
         {
             var result = (from smi in _AnyBannerItemRepo.Table
-                          where smi.BannerID== bannerId
+                          where smi.BannerID == bannerId
                           orderby smi.Order
-                          select new WB_AnyBannerItemModel
-                          {
-                              Id = smi.Id,
-                              Title = smi.Title,
-                              Alt=smi.Alt,
-                              Url = smi.Url,
-                              BannerID = smi.BannerID,
-                              ImageUrl = smi.ImageUrl,
-                              IsActived = smi.IsActived,
-                              Order = smi.Order
-                          }).ToList();
+                          select smi).ToList();
             return result;
         }
 
-        public WB_AnyBannerItemModel GetModelById(int id)
+        public WB_AnyBannerItem GetModelById(int id)
         {
             var result = (from smi in _AnyBannerItemRepo.Table
                           where smi.Id == id
-                          select new WB_AnyBannerItemModel
-                          {
-                              Id = smi.Id,
-                              Title = smi.Title,
-                              Alt = smi.Alt,
-                              Url = smi.Url,
-                              BannerID=smi.BannerID,
-                              ImageUrl=smi.ImageUrl,
-                              IsActived=smi.IsActived,
-                              Order=smi.Order
-                          }).FirstOrDefault();
-          
+                          select smi).FirstOrDefault();
             return result;
         }
     }

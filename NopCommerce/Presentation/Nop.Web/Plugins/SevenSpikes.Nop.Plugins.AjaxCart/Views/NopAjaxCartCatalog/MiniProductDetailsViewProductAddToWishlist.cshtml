@@ -5,7 +5,7 @@
 @model Nop.Web.Models.Catalog.ProductDetailsModel.AddToCartModel
 
 <div class="add-to-cart">
-    @Html.LabelFor(model => model.EnteredQuantity, new { @class = "qty-label" }, ":")
+    @*@Html.LabelFor(model => model.EnteredQuantity, new { @class = "qty-label" }, ":")
 
     @if (Model.AllowedQuantities.Count > 0)
     {
@@ -14,7 +14,7 @@
     else
     {
         @Html.TextBoxFor(model => model.EnteredQuantity, new { @class = "qty-input" })
-    }
+    }*@
 
     <input type="button" id="add-to-cart-button-@Model.ProductId" value="@T("shoppingcart.addtowishlist")" class="button-1 add-to-cart-button miniProductDetailsViewAddToWishlistButton miniProductDetailsViewAddToCartButton" data-productid="@Model.ProductId" />
 

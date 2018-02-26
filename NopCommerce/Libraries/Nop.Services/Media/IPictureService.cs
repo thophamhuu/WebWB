@@ -30,7 +30,7 @@ namespace Nop.Services.Media
         /// <param name="defaultPictureType">Default picture type</param>
         /// <param name="storeLocation">Store location URL; null to use determine the current store location automatically</param>
         /// <returns>Picture URL</returns>
-        string GetDefaultPictureUrl(int targetSize = 0, 
+        string GetDefaultPictureUrl(int targetSize = 0,
             PictureType defaultPictureType = PictureType.Entity,
             string storeLocation = null);
 
@@ -43,10 +43,10 @@ namespace Nop.Services.Media
         /// <param name="storeLocation">Store location URL; null to use determine the current store location automatically</param>
         /// <param name="defaultPictureType">Default picture type</param>
         /// <returns>Picture URL</returns>
-        string GetPictureUrl(int pictureId, 
+        string GetPictureUrl(int pictureId,
             int targetSize = 0,
-            bool showDefaultPicture = true, 
-            string storeLocation = null, 
+            bool showDefaultPicture = true,
+            string storeLocation = null,
             PictureType defaultPictureType = PictureType.Entity);
 
         /// <summary>
@@ -58,10 +58,10 @@ namespace Nop.Services.Media
         /// <param name="storeLocation">Store location URL; null to use determine the current store location automatically</param>
         /// <param name="defaultPictureType">Default picture type</param>
         /// <returns>Picture URL</returns>
-        string GetPictureUrl(Picture picture, 
+        string GetPictureUrl(Picture picture,
             int targetSize = 0,
-            bool showDefaultPicture = true, 
-            string storeLocation = null, 
+            bool showDefaultPicture = true,
+            string storeLocation = null,
             PictureType defaultPictureType = PictureType.Entity);
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace Nop.Services.Media
         /// <param name="targetSize">The target picture size (longest side)</param>
         /// <param name="showDefaultPicture">A value indicating whether the default picture is shown</param>
         /// <returns></returns>
-        string GetThumbLocalPath(Picture picture, int targetSize = 0, bool showDefaultPicture = true);
+        string GetThumbLocalPath(Picture picture, int targetSize = 0, bool showDefaultPicture = true,bool isProcess= false);
 
         /// <summary>
         /// Gets a picture
@@ -113,7 +113,7 @@ namespace Nop.Services.Media
         /// <param name="isNew">A value indicating whether the picture is new</param>
         /// <param name="validateBinary">A value indicating whether to validated provided picture binary</param>
         /// <returns>Picture</returns>
-        Picture InsertPicture(byte[] pictureBinary, string mimeType, string seoFilename, 
+        Picture InsertPicture(byte[] pictureBinary, string mimeType, string seoFilename,
             string altAttribute = null, string titleAttribute = null,
             bool isNew = true, bool validateBinary = true);
 
@@ -132,7 +132,7 @@ namespace Nop.Services.Media
         Picture UpdatePicture(int pictureId, byte[] pictureBinary, string mimeType,
             string seoFilename, string altAttribute = null, string titleAttribute = null,
             bool isNew = true, bool validateBinary = true);
-
+        void CreateThumbs(Picture picture, int[] sizeThumbs);
         /// <summary>
         /// Updates a SEO filename of a picture
         /// </summary>
@@ -159,6 +159,6 @@ namespace Nop.Services.Media
         /// </summary>
         /// <param name="picturesIds">Pictures Ids</param>
         /// <returns></returns>
-        IDictionary<int, string> GetPicturesHash(int [] picturesIds);
+        IDictionary<int, string> GetPicturesHash(int[] picturesIds);
     }
 }

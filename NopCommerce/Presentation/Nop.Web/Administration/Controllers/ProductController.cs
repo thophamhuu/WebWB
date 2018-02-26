@@ -1280,7 +1280,8 @@ namespace Nop.Admin.Controllers
                 SaveDiscountMappings(product, model);
                 //picture seo names
                 UpdatePictureSeoNames(product);
-
+                //thumbnail
+                SaveThumbs(product, new List<int>() { 0, 75 });
                 //back in stock notifications
                 if (product.ManageInventoryMethod == ManageInventoryMethod.ManageStock &&
                     product.BackorderMode == BackorderMode.NoBackorders &&
@@ -4883,7 +4884,44 @@ namespace Nop.Admin.Controllers
         }
 
         #endregion
+        protected void SaveThumbs(Product product, List<int> sizeThumbs = null)
+        {
+            var pictures = _pictureService.GetPicturesByProductId(product.Id);
+            if (sizeThumbs == null)
+                sizeThumbs = new List<int>();
+            sizeThumbs.Add(0);
+            sizeThumbs.Add(75);
+            sizeThumbs.Add(210);
+            var mediaSettings = _settingService.LoadSetting<MediaSettings>();
+            if (mediaSettings != null)
+            {
 
+
+                if (mediaSettings.CartThumbPictureSize > 0)
+                    sizeThumbs.Add(mediaSettings.CartThumbPictureSize);
+
+                if (mediaSettings.MiniCartThumbPictureSize > 0)
+                    sizeThumbs.Add(mediaSettings.MiniCartThumbPictureSize);
+
+                if (mediaSettings.ProductDetailsPictureSize > 0)
+                    sizeThumbs.Add(mediaSettings.ProductDetailsPictureSize);
+
+                if (mediaSettings.ProductThumbPictureSize > 0)
+                    sizeThumbs.Add(mediaSettings.ProductThumbPictureSize);
+
+                if (mediaSettings.ProductThumbPictureSizeOnProductDetailsPage > 0)
+                    sizeThumbs.Add(mediaSettings.ProductThumbPictureSizeOnProductDetailsPage);
+            }
+            if (pictures != null)
+            {
+
+                foreach (var picture in pictures)
+                {
+                    _pictureService.CreateThumbs(picture, sizeThumbs.ToArray());
+                }
+            }
+
+        }
         #endregion
     }
 }

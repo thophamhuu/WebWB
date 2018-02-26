@@ -181,7 +181,6 @@ namespace Nop.Web.Framework
             {
                 if (_cachedCustomer != null)
                     return _cachedCustomer;
-
                 Customer customer = null;
                 if (_httpContext == null || _httpContext is FakeHttpContext)
                 {
@@ -254,7 +253,7 @@ namespace Nop.Web.Framework
                     SetCustomerCookie(customer.CustomerGuid);
                     _cachedCustomer = customer;
                 }
-
+                
                 return _cachedCustomer;
             }
             set

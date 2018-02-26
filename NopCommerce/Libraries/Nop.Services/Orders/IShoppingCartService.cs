@@ -194,5 +194,7 @@ namespace Nop.Services.Orders
         /// <param name="toCustomer">To customer</param>
         /// <param name="includeCouponCodes">A value indicating whether to coupon codes (discount and gift card) should be also re-applied</param>
         void MigrateShoppingCart(Customer fromCustomer, Customer toCustomer, bool includeCouponCodes);
+
+        IList<ShoppingCartItem> GetShoppingCartItems(Guid customerGuid);
     }
 }

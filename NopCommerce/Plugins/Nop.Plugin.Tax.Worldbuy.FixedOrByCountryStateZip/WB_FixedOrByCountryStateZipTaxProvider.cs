@@ -89,6 +89,7 @@ namespace Nop.Plugin.Tax.Worldbuy.FixedOrByCountryStateZip
                             result = new CalculateTaxResult
                             {
                                 TaxRate = curRate,
+                                TaxCategoryId = taxCategoryId
                             };
                         }
 

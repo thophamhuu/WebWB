@@ -34,5 +34,7 @@ namespace Nop.Core.Domain.Media
         /// Gets or sets a value indicating whether the picture is new
         /// </summary>
         public bool IsNew { get; set; }
+
+        public string SizeThumbs { get; set; }
     }
 }

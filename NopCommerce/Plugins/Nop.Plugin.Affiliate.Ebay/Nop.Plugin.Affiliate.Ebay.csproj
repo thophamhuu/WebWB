@@ -47,7 +47,7 @@
       <HintPath>..\..\packages\AutoMapper.5.2.0\lib\net45\AutoMapper.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="eBay.Service">
+    <Reference Include="eBay.Service, Version=3.981.0.0, Culture=neutral, PublicKeyToken=1d9d786a5932eaf0, processorArchitecture=MSIL">
       <HintPath>..\..\packages\eBay.3.981.0\lib\net40\eBay.Service.dll</HintPath>
       <Private>False</Private>
     </Reference>
@@ -70,10 +70,6 @@
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Nop.Plugin.Affiliate.CategoryMap">
-      <HintPath>..\..\Presentation\Nop.Web\Plugins\Affiliate.CategoryMap\Nop.Plugin.Affiliate.CategoryMap.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System">
@@ -168,6 +164,11 @@
     <ProjectReference Include="..\..\Presentation\Nop.Web\Administration\Nop.Admin.csproj">
       <Project>{152c761a-dd2e-4c1f-af89-dfb2547a3bca}</Project>
       <Name>Nop.Admin</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Nop.Plugin.Affiliate.CategoryMap\Nop.Plugin.Affiliate.CategoryMap.csproj">
+      <Project>{00ed2f85-b5fb-4005-a817-fdfe9083f8ef}</Project>
+      <Name>Nop.Plugin.Affiliate.CategoryMap</Name>
       <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
@@ -412,6 +413,7 @@
     <Content Include="logo.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Include="packages.config" />
     <None Include="Views\CallApi.cshtml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
