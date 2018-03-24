@@ -45,14 +45,12 @@ namespace Nop.Web
 
         protected void Application_Start()
         {
+            APIHelper.Initilize("http://api.worldbuy.vn/");
             if (Context.IsDebuggingEnabled)
             {
                 APIHelper.Initilize("http://localhost:49647/");
             }
-            else
-            {
-                APIHelper.Initilize("http://api.worldbuy.vn/");
-            }
+            
             //most of API providers require TLS 1.2 nowadays
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 

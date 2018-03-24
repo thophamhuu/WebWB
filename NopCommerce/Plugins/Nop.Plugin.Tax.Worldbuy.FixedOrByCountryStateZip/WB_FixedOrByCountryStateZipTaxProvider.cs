@@ -59,7 +59,7 @@ namespace Nop.Plugin.Tax.Worldbuy.FixedOrByCountryStateZip
         public CalculateTaxResult GetTaxRate(CalculateTaxRequest calculateTaxRequest)
         {
             var _productMappingRepo = EngineContext.Current.Resolve<IRepository<ProductMapping>>();
-            var productMapping = _productMappingRepo.TableNoTracking.FirstOrDefault(x => x.ProductId == calculateTaxRequest.Product.Id);
+            var productMapping = _productMappingRepo.Table.FirstOrDefault(x => x.ProductId == calculateTaxRequest.Product.Id);
             var result = new CalculateTaxResult();
             var _taxCategoryMappingService = EngineContext.Current.Resolve<IWB_TaxCategoryMappingService>();
             if (productMapping != null)
