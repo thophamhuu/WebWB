@@ -373,8 +373,8 @@ namespace Nop.Core
 
             string serverHost = "cdn.worldbuy.vn";
 
-            //if (HttpContext.Current.IsDebuggingEnabled)
-            //    serverHost = "localhost:81";
+            if (HttpContext.Current.IsDebuggingEnabled)
+                serverHost = "localhost:81";
             //Uri uri = new Uri(serverHost);
             if (isProcess)
             {
