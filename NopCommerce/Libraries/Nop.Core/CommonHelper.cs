@@ -370,13 +370,18 @@ namespace Nop.Core
                     break;
                 default: break;
             }
-            string serverHost = "";
-            if (!isProcess)
-                serverHost = HttpContext.Current.IsDebuggingEnabled ? "localhost:81" : "103.9.159.122";
-            else
+
+            string serverHost = "cdn.worldbuy.vn";
+
+            //if (HttpContext.Current.IsDebuggingEnabled)
+            //    serverHost = "localhost:81";
+            //Uri uri = new Uri(serverHost);
+            if (isProcess)
             {
-                serverHost = (HttpContext.Current.IsDebuggingEnabled ? "localhost" : "103.9.159.122") + ":" + 8080;
+                serverHost = Regex.Replace(serverHost,@":\d*", ":8080");
+              //  uri = new Uri(serverHost);
             }
+                
             return remoteFile.MapPath(serverHost, path);
         }
 
@@ -390,6 +395,7 @@ namespace Nop.Core
                     break;
                 default: break;
             }
+            fileName = MapPathServer(fileName);
             return remoteFile.CheckIfFileExistsOnServer(fileName) == HttpStatusCode.OK;
         }
 
@@ -404,6 +410,7 @@ namespace Nop.Core
                     break;
                 default: break;
             }
+            filePath = MapPathServer(filePath);
             return remoteFile.DownloadFile(filePath);
         }
 
@@ -418,6 +425,7 @@ namespace Nop.Core
                     break;
                 default: break;
             }
+            source = MapPathServer(source, true);
             remoteFile.UploadFile(pictureBinary, source);
         }
         public static void DeleteFileToServer(string filename, WebProtocal webProtocal = WebProtocal.HTTP)
@@ -430,6 +438,7 @@ namespace Nop.Core
                     break;
                 default: break;
             }
+            filename = MapPathServer(filename, true);
             remoteFile.DeleteFile(filename);
         }
         //public static List<string> GetFiles(string path, string filter)
