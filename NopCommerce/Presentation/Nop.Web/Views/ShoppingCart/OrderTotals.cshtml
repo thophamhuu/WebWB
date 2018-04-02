@@ -22,18 +22,18 @@
                     </td>
                 </tr>
             }
-            @*@if (!Model.HideShippingTotal)
+            @if (!Model.HideShippingTotal)
             {
                 <tr class="shipping-cost">
                     <td class="cart-total-left">
                         <label>@T("ShoppingCart.Totals.Shipping"):</label>
-                        @if (Model.RequiresShipping && !String.IsNullOrEmpty(Model.SelectedShippingMethod))
+                        @*@if (Model.RequiresShipping && !String.IsNullOrEmpty(Model.SelectedShippingMethod))
                         {
                             <span class="selected-shipping-method">@T("ShoppingCart.Totals.Shipping.Method", Model.SelectedShippingMethod)</span>
-                        }
+                        }*@
                     </td>
                     <td class="cart-total-right">
-                        @if (Model.RequiresShipping)
+                        @*@if (Model.RequiresShipping)
                         {
                             if (!String.IsNullOrEmpty(Model.Shipping))
                             {
@@ -47,10 +47,11 @@
                         else
                         {
                             <span>@T("ShoppingCart.Totals.Shipping.NotRequired")</span>
-                        }
+                        }*@
+                        <span>@T("ShoppingCart.Totals.Shipping.Free")</span>
                     </td>
                 </tr>
-            }*@
+            }
             @if (!String.IsNullOrEmpty(Model.PaymentMethodAdditionalFee))
             {
                 <tr class="additional-fees">

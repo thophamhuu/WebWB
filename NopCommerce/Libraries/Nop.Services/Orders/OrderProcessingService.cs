@@ -237,8 +237,8 @@ namespace Nop.Services.Orders
             public string CustomerCurrencyCode { get; set; }
             public decimal CustomerCurrencyRate { get; set; }
 
-            public int BillingAddressId { get; set; }
-            public int ShippingAddressId { get; set; }
+            public Address BillingAddress { get; set; }
+            public Address ShippingAddress { get; set; }
             public ShippingStatus ShippingStatus { get; set; }
             public string ShippingMethodName { get; set; }
             public string ShippingRateComputationMethodSystemName { get; set; }
@@ -323,7 +323,7 @@ namespace Nop.Services.Orders
 
             if (customer.BillingAddress.Country != null && !customer.BillingAddress.Country.AllowsBilling)
                 throw new NopException(string.Format("Country '{0}' is not allowed for billing", customer.BillingAddress.Country.Name));
-            details.BillingAddressId = customer.BillingAddress.Id;
+            details.BillingAddress = (Address)customer.BillingAddress.CloneOrderAddress();
             //checkout attributes
             details.CheckoutAttributesXml = customer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, processPaymentRequest.StoreId);
             details.CheckoutAttributeDescription = _checkoutAttributeFormatter.FormatAttributes(details.CheckoutAttributesXml, customer);
@@ -425,7 +425,7 @@ namespace Nop.Services.Orders
 
                     if (customer.ShippingAddress.Country != null && !customer.ShippingAddress.Country.AllowsShipping)
                         throw new NopException(string.Format("Country '{0}' is not allowed for shipping", customer.ShippingAddress.Country.Name));
-                    details.ShippingAddressId = customer.ShippingAddress.Id;
+                    details.ShippingAddress =(Address) customer.ShippingAddress.CloneOrderAddress();
                 }
 
                 var shippingOption = customer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, processPaymentRequest.StoreId);
@@ -564,7 +564,7 @@ namespace Nop.Services.Orders
             //details.BillingAddress = (Address)details.InitialOrder.BillingAddress.Clone();
             if (customer.BillingAddress.Country != null && !customer.BillingAddress.Country.AllowsBilling)
                 throw new NopException(string.Format("Country '{0}' is not allowed for billing", customer.BillingAddress.Country.Name));
-            details.BillingAddressId = customer.BillingAddress.Id;
+            details.BillingAddress =(Address) customer.BillingAddress.CloneOrderAddress();
             //checkout attributes
             details.CheckoutAttributesXml = details.InitialOrder.CheckoutAttributesXml;
             details.CheckoutAttributeDescription = details.InitialOrder.CheckoutAttributeDescription;
@@ -589,7 +589,7 @@ namespace Nop.Services.Orders
                     //details.ShippingAddress = (Address)details.InitialOrder.ShippingAddress.Clone();
                     if (customer.ShippingAddress.Country != null && !customer.ShippingAddress.Country.AllowsShipping)
                         throw new NopException(string.Format("Country '{0}' is not allowed for shipping", customer.ShippingAddress.Country.Name));
-                    details.ShippingAddressId = customer.ShippingAddress.Id;
+                    details.ShippingAddress = (Address)customer.ShippingAddress.CloneOrderAddress();
                 }
                 else
                     if (details.InitialOrder.PickupAddress != null)
@@ -677,8 +677,8 @@ namespace Nop.Services.Orders
                 SubscriptionTransactionId = processPaymentResult.SubscriptionTransactionId,
                 PaymentStatus = processPaymentResult.NewPaymentStatus,
                 PaidDateUtc = null,
-                BillingAddressId = details.BillingAddressId,
-                ShippingAddressId = details.ShippingAddressId,
+                BillingAddress = details.BillingAddress,
+                ShippingAddress = details.ShippingAddress,
                 ShippingStatus = details.ShippingStatus,
                 ShippingMethod = details.ShippingMethodName,
                 PickUpInStore = details.PickUpInStore,

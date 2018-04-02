@@ -373,8 +373,8 @@ namespace Nop.Core
 
             string serverHost = "cdn.worldbuy.vn";
 
-            if (HttpContext.Current.IsDebuggingEnabled)
-                serverHost = "localhost:81";
+            //if (HttpContext.Current.IsDebuggingEnabled)
+            //    serverHost = "localhost:81";
             //Uri uri = new Uri(serverHost);
             if (isProcess)
             {
@@ -410,7 +410,6 @@ namespace Nop.Core
                     break;
                 default: break;
             }
-            filePath = MapPathServer(filePath);
             return remoteFile.DownloadFile(filePath);
         }
 
@@ -425,7 +424,6 @@ namespace Nop.Core
                     break;
                 default: break;
             }
-            source = MapPathServer(source, true);
             remoteFile.UploadFile(pictureBinary, source);
         }
         public static void DeleteFileToServer(string filename, WebProtocal webProtocal = WebProtocal.HTTP)
@@ -438,7 +436,7 @@ namespace Nop.Core
                     break;
                 default: break;
             }
-            filename = MapPathServer(filename, true);
+            MapPathServer(filename, true);
             remoteFile.DeleteFile(filename);
         }
         //public static List<string> GetFiles(string path, string filter)

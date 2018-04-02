@@ -2095,7 +2095,21 @@ namespace Nop.Services.Catalog
             }
             return sortedProductReviews;
         }
+        /// <summary>
+        /// Deletes a product review
+        /// </summary>
+        /// <param name="productReview">Product review</param>
+        public virtual void InsertProductReview(ProductReview productReview)
+        {
+            if (productReview == null)
+                throw new ArgumentNullException("productReview");
 
+            _productReviewRepository.Insert(productReview);
+
+            _cacheManager.RemoveByPattern(PRODUCTS_PATTERN_KEY);
+            //event notification
+            _eventPublisher.EntityDeleted(productReview);
+        }
         /// <summary>
         /// Deletes a product review
         /// </summary>

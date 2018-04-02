@@ -2162,17 +2162,67 @@ namespace Nop.Admin.Controllers
                 overrideTitleAttribute);
 
             _pictureService.SetSeoFilename(pictureId, _pictureService.GetPictureSeName(product.Name));
-
-            _productService.InsertProductPicture(new ProductPicture
+            var productPicture = new ProductPicture
             {
                 PictureId = pictureId,
                 ProductId = productId,
                 DisplayOrder = displayOrder,
-            });
-
+            };
+            _productService.InsertProductPicture(productPicture);
+            if (productPicture.Id > 0)
+                SaveThumb(product, productPicture);
             return Json(new { Result = true }, JsonRequestBehavior.AllowGet);
         }
+        [ValidateInput(false)]
+        public virtual ActionResult ProductPicturesAdd(int[] pictureIds, int displayOrder,
+            string overrideAltAttribute, string overrideTitleAttribute,
+            int productId)
+        {
+            if (!_permissionService.Authorize(StandardPermissionProvider.ManageProducts))
+                return AccessDeniedView();
 
+            if (pictureIds == null)
+                throw new ArgumentException();
+
+            var product = _productService.GetProductById(productId);
+            if (product == null)
+                throw new ArgumentException("No product found with the specified id");
+
+            //a vendor should have access only to his products
+            if (_workContext.CurrentVendor != null && product.VendorId != _workContext.CurrentVendor.Id)
+                return RedirectToAction("List");
+            foreach (int pictureId in pictureIds)
+            {
+                if (pictureId == 0) continue;
+                var picture = _pictureService.GetPictureById(pictureId);
+                if (picture == null)
+                    throw new ArgumentException("No picture found with the specified id");
+
+                _pictureService.UpdatePicture(picture.Id,
+                    _pictureService.LoadPictureBinary(picture),
+                    picture.MimeType,
+                    picture.SeoFilename,
+                    overrideAltAttribute,
+                    overrideTitleAttribute);
+
+                _pictureService.SetSeoFilename(pictureId, _pictureService.GetPictureSeName(product.Name));
+                var productPicture = new ProductPicture
+                {
+                    PictureId = pictureId,
+                    ProductId = productId,
+                    DisplayOrder = displayOrder,
+                };
+                _productService.InsertProductPicture(productPicture);
+
+                if (productPicture.Id > 0)
+                {
+                    SaveThumb(product,productPicture);
+                }
+            }
+
+            
+            return Json(new { Result = true }, JsonRequestBehavior.AllowGet);
+        }
         [HttpPost]
         public virtual ActionResult ProductPictureList(DataSourceRequest command, int productId)
         {
@@ -4884,6 +4934,40 @@ namespace Nop.Admin.Controllers
         }
 
         #endregion
+        protected void SaveThumb(Product product,ProductPicture productPicture, List<int> sizeThumbs = null)
+        {
+            var picture = _pictureService.GetPictureById(productPicture.PictureId);
+            if (sizeThumbs == null)
+                sizeThumbs = new List<int>();
+            sizeThumbs.Add(0);
+            sizeThumbs.Add(75);
+            sizeThumbs.Add(210);
+            var mediaSettings = _settingService.LoadSetting<MediaSettings>();
+            if (mediaSettings != null)
+            {
+
+
+                if (mediaSettings.CartThumbPictureSize > 0)
+                    sizeThumbs.Add(mediaSettings.CartThumbPictureSize);
+
+                if (mediaSettings.MiniCartThumbPictureSize > 0)
+                    sizeThumbs.Add(mediaSettings.MiniCartThumbPictureSize);
+
+                if (mediaSettings.ProductDetailsPictureSize > 0)
+                    sizeThumbs.Add(mediaSettings.ProductDetailsPictureSize);
+
+                if (mediaSettings.ProductThumbPictureSize > 0)
+                    sizeThumbs.Add(mediaSettings.ProductThumbPictureSize);
+
+                if (mediaSettings.ProductThumbPictureSizeOnProductDetailsPage > 0)
+                    sizeThumbs.Add(mediaSettings.ProductThumbPictureSizeOnProductDetailsPage);
+            }
+            if (picture != null)
+            {
+                _pictureService.CreateThumbs(picture, sizeThumbs.ToArray());
+            }
+
+        }
         protected void SaveThumbs(Product product, List<int> sizeThumbs = null)
         {
             var pictures = _pictureService.GetPicturesByProductId(product.Id);

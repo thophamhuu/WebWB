@@ -1137,7 +1137,9 @@ namespace Nop.Services.Messages
         /// <param name="productReview">Product review</param>
         public virtual void AddProductReviewTokens(IList<Token> tokens, ProductReview productReview)
         {
-            tokens.Add(new Token("ProductReview.ProductName", productReview.Product.Name));
+            var _productService = EngineContext.Current.Resolve<IProductService>();
+            var product = _productService.GetProductById(productReview.ProductId);
+            tokens.Add(new Token("ProductReview.ProductName", product.Name));
 
             //event notification
             _eventPublisher.EntityTokensAdded(productReview, tokens);

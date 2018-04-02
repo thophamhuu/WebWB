@@ -109,5 +109,27 @@ namespace Nop.Core.Domain.Common
             };
             return addr;
         }
+
+        public object CloneOrderAddress()
+        {
+            var addr = new Address
+            {
+                FirstName = this.FirstName,
+                LastName = this.LastName,
+                Email = this.Email,
+                Company = this.Company,
+                CountryId = this.CountryId,
+                StateProvinceId = this.StateProvinceId,
+                City = this.City,
+                Address1 = this.Address1,
+                Address2 = this.Address2,
+                ZipPostalCode = this.ZipPostalCode,
+                PhoneNumber = this.PhoneNumber,
+                FaxNumber = this.FaxNumber,
+                CustomAttributes = this.CustomAttributes,
+                CreatedOnUtc = this.CreatedOnUtc,
+            };
+            return addr;
+        }
     }
 }

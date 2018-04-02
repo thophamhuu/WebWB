@@ -36,6 +36,16 @@ namespace Nop.Web.Models.Catalog
         public AddProductReviewModel AddProductReview { get; set; }
     }
 
+    [Validator(typeof(ProductReviewsValidator))]
+    public partial class WorldbuyProductReviewsModel : BaseNopModel
+    {
+        public WorldbuyProductReviewsModel()
+        {
+            AddProductReview = new AddProductReviewModel();
+        }
+        public AddProductReviewModel AddProductReview { get; set; }
+    }
+
     public partial class ProductReviewModel : BaseNopEntityModel
     {
         public int CustomerId { get; set; }

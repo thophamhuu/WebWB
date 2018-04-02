@@ -514,7 +514,7 @@ namespace Nop.Services.Catalog
         /// </summary>
         /// <param name="productReview">Product review</param>
         void DeleteProductReview(ProductReview productReview);
-
+        void InsertProductReview(ProductReview productReview);
         /// <summary>
         /// Deletes product reviews
         /// </summary>

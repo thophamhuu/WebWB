@@ -271,6 +271,7 @@
     <Compile Include="Controllers\CountryController.cs" />
     <Compile Include="Controllers\CustomerController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\WorldbuyController.cs" />
     <Compile Include="Extensions\AttributeParserHelper.cs" />
     <Compile Include="Extensions\HtmlExtensions.cs" />
     <Compile Include="Extensions\MappingExtensions.cs" />
@@ -1163,6 +1164,7 @@
     <Content Include="Themes\Pavilion\Views\Checkout\CheckoutProgress.cshtml" />
     <Content Include="Themes\Pavilion\theme.config" />
     <Content Include="Themes\Pavilion\Views\Checkout\Confirm.cshtml" />
+    <Content Include="Views\Worldbuy\ProductReviews.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Content\Images\Thumbs\" />

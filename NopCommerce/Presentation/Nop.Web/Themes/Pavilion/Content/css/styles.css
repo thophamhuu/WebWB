@@ -415,7 +415,7 @@ label, label + * {
     .cart td, .data-table td,
     .compare-products-table td,
     .forums-table-section td {
-        min-width: 50px;
+        min-width: 130px;
         border-top: 1px solid #f0f0f0;
         padding: 25px;
     }
